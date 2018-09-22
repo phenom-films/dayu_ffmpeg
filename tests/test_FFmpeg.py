@@ -18,9 +18,7 @@ class TestFFmpeg(TestCase):
         self.assertRaises(DayuFFmpegValueError, FFmpeg, {1: 1})
         self.assertRaises(DayuFFmpegValueError, FFmpeg, FFmpeg())
 
-
     def test___str__(self):
         self.assertEqual(FFmpeg().__str__(), FFMPEG_EXEC[sys.platform].join(['\"', '\"']))
         self.assertEqual(FFmpeg('some/ffmpeg').__str__(), '\"some/ffmpeg\"')
-
-
+        self.assertEqual(FFmpeg(u'中文').__str__(), u'\"中文\"')
