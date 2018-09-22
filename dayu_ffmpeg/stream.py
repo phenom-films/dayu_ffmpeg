@@ -15,8 +15,8 @@ __doc__ = \
 
 import sys
 
-from config import FFMPEG_DEFAULT_FONT, FFMPEG_EXEC
 from base import *
+from config import FFMPEG_DEFAULT_FONT, FFMPEG_EXEC, SINGLE_MEDIA_FORMAT
 
 
 def get_safe_string(string):
@@ -53,31 +53,33 @@ class Overwrite(GlobalStream):
 class Input(InputStream):
     _name = 'input'
 
-    def __init__(self, filename, start=None, trim_in_frame=None, trim_out_frame=None, fps=None, sequence=True):
+    def __init__(self, filename, start=None, trim_in_frame=None, trim_out_frame=None, fps=None):
         super(Input, self).__init__()
         self.filename = filename
         self.start = start
         self.trim_in = trim_in_frame
         self.trim_out = trim_out_frame
         self.fps = fps
-        self.sequence = False if filename.endswith((u'.mov', u'.mp4', u'.mkv')) else True
+        self.sequence = False if filename.endswith(SINGLE_MEDIA_FORMAT) else True
 
     def __str__(self):
         if self.sequence:
             self._value = u'{start}-f image2 ' \
-                          u'{fps}{trimin} ' \
+                          u'{fps}{trimin}' \
                           u'-i \"{filename}\"' \
                           u''.format(start='-start_number {} '.format(self.start) if self.start else '',
-                                     fps='-r {}'.format(self.fps) if self.fps else '',
-                                     trimin=' -ss {}'.format(
-                                             self.trim_in / self.fps) if self.trim_in else '',
+                                     fps='-r {} '.format(self.fps) if self.fps else '',
+                                     trimin='-ss {:.02f} '.format(
+                                             self.trim_in / float(
+                                                     self.fps if self.fps else 24.0)) if self.trim_in else '',
                                      filename=self.filename)
         else:
             self._value = u'{fps}{trimin}' \
-                          u' -i \"{filename}\"' \
-                          u''.format(fps='-r {}'.format(self.fps) if self.fps else '',
-                                     trimin=' -ss {}'.format(
-                                             self.trim_in / self.fps) if self.trim_in else '',
+                          u'-i \"{filename}\"' \
+                          u''.format(fps='-r {} '.format(self.fps) if self.fps else '',
+                                     trimin='-ss {:.02f} '.format(
+                                             self.trim_in / float(
+                                                     self.fps if self.fps else 24.0)) if self.trim_in else '',
                                      filename=self.filename)
         return self._value
 
@@ -103,46 +105,40 @@ class Fit(UnaryFilterStream):
         self.combine_op = [_scale_op, _pad_op]
 
 
-class Trim(UnaryFilterStream):
-    _name = 'scale'
-
-    def __init__(self, start=None, end=None):
-        super(Trim, self).__init__()
-        self.start = start
-        self.end = end
-
-    def __str__(self):
-        self._value = u'{stream_in}trim=start_frame={start}:' \
-                      u'end_frame={end}{stream_out}'.format(stream_in=self._stream_in,
-                                                            stream_out=self._stream_out,
-                                                            start=self.start,
-                                                            end=self.end)
-        return self._value
-
-
 class Scale(UnaryFilterStream):
     _name = 'scale'
 
-    def __init__(self, width=None, height=None, scale_x=None, scale_y=None):
+    def __init__(self, width=None, height=None, scale_x=None, scale_y=None, **kwargs):
+        if width is None and height is None and scale_x is None and scale_y is None:
+            raise DayuFFmpegValueError
+
         super(Scale, self).__init__()
         self.width = width
         self.height = height
         self.scale_x = scale_x
         self.scale_y = scale_y
+        self.kwargs = kwargs
 
     def __str__(self):
-        if self.scale_x is None and self.scale_y is None:
-            self._value = u'{stream_in}scale=w={width}:h={height}{stream_out}'.format(stream_in=self._stream_in,
-                                                                                      stream_out=self._stream_out,
-                                                                                      width=self.width,
-                                                                                      height=self.height)
-            return self._value
-        if self.width is None and self.height is None:
-            self._value = u'{stream_in}scale=w=iw*{scale_x}:h=ih*{scale_y}{stream_out}'.format(
+        if self.width is not None or self.height is not None:
+            self._value = u'{stream_in}scale=w={width}:h={height}{kwargs}{stream_out}'.format(
                     stream_in=self._stream_in,
                     stream_out=self._stream_out,
-                    scale_x=self.scale_x,
-                    scale_y=self.scale_y)
+                    width=self.width if self.width else -1,
+                    height=self.height if self.height else -1,
+                    kwargs=u':{}'.format(
+                            u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+            )
+            return self._value
+
+        if self.scale_x is not None or self.scale_y is not None:
+            self._value = u'{stream_in}scale=w=iw*{scale_x}:h=ih*{scale_y}{kwargs}{stream_out}'.format(
+                    stream_in=self._stream_in,
+                    stream_out=self._stream_out,
+                    scale_x=self.scale_x if self.scale_x else self.scale_y,
+                    scale_y=self.scale_y if self.scale_y else self.scale_x,
+                    kwargs=u':{}'.format(
+                            u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u'')
             return self._value
 
 
