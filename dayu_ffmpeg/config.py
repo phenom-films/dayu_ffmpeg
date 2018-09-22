@@ -14,3 +14,5 @@ FFMPEG_DEFAULT_FONT = {
     'win32' : os.sep.join((os.path.dirname(__file__), 'static', 'font', 'SourceHanSansK-Regular.ttf')),
     'darwin': os.sep.join((os.path.dirname(__file__), 'static', 'font', 'SourceHanSansK-Regular.ttf')),
     'linux2': os.sep.join((os.path.dirname(__file__), 'static', 'font', 'SourceHanSansK-Regular.ttf'))}
+
+SINGLE_MEDIA_FORMAT = (u'.mov', u'.mp4', u'.mkv')
