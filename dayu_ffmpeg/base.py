@@ -187,7 +187,9 @@ class FFmpegBaseStream(object):
         speed_regex = re.compile(r'.*?speed=\s*?(.*?)x')
 
         start_time = time.time()
-        shell_cmd = subprocess.Popen(self.cmd(),
+        _cmd = self.cmd()
+        print _cmd
+        shell_cmd = subprocess.Popen(_cmd,
                                      shell=True,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
@@ -210,8 +212,8 @@ class FFmpegBaseStream(object):
                 self.progress['render_speed'] = float(speed_match.group(1))
                 yield self.progress
 
-
         if shell_cmd.returncode != 0:
+            print shell_cmd.stderr.readlines()
             raise DayuFFmpegRenderError
 
 

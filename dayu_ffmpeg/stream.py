@@ -19,16 +19,23 @@ from config import FFMPEG_DEFAULT_FONT, FFMPEG_EXEC
 from base import *
 
 
+def get_safe_string(string):
+    return u'{}'.format(string.replace('\\', '\\\\').replace(':', '\\:').replace('%', r'\\\\%'))
+
+
 class FFmpeg(GlobalStream):
     _input_count = 0
     _name = 'ffmpeg'
 
-    def __init__(self):
+    def __init__(self, exec_path=None):
         super(FFmpeg, self).__init__()
-        self._value = FFMPEG_EXEC[sys.platform]
+        if exec_path is None or isinstance(exec_path, basestring):
+            self._value = exec_path if exec_path else FFMPEG_EXEC[sys.platform]
+        else:
+            raise DayuFFmpegValueError
 
     def __str__(self):
-        return self._value
+        return u'\"{}\"'.format(self._value)
 
 
 class Overwrite(GlobalStream):
@@ -223,7 +230,7 @@ class DrawText(UnaryFilterStream):
                       u'shadowy={shadowy}' \
                       u'{font}{box}{enable}{stream_out}'.format(stream_in=self._stream_in,
                                                                 stream_out=self._stream_out,
-                                                                text=self.text.replace('%', r'\\\\%'),
+                                                                text=get_safe_string(self.text),
                                                                 x=self.x,
                                                                 y=self.y,
                                                                 size=self.size,
@@ -231,8 +238,8 @@ class DrawText(UnaryFilterStream):
                                                                 shadowx=self.shadowx,
                                                                 shadowy=self.shadowy,
                                                                 font=':fontfile=\'{}\''.format(
-                                                                        self.font.replace('\\', '\\\\').replace(':',
-                                                                                                                '\\:')) if self.font else '',
+                                                                        get_safe_string(
+                                                                                self.font)) if self.font else '',
                                                                 box=':box=1:boxcolor={}:boxborder={}'.format(
                                                                         self.box_color,
                                                                         self.box_border) if self.box else '',
@@ -267,16 +274,15 @@ class DrawDate(UnaryFilterStream):
                       u'shadowy={shadowy}' \
                       u'{font}{box}{stream_out}'.format(stream_in=self._stream_in,
                                                         stream_out=self._stream_out,
-                                                        date_format=self.date_format.replace(':', '\\:'),
+                                                        date_format=get_safe_string(self.date_format),
                                                         x=self.x,
                                                         y=self.y,
                                                         size=self.size,
                                                         color=self.color,
                                                         shadowx=self.shadowx,
                                                         shadowy=self.shadowy,
-                                                        font=':fontfile=\'{}\''.format(self.font.replace('\\',
-                                                                                                         '\\\\').replace(
-                                                                ':', '\\:')) if self.font else '',
+                                                        font=':fontfile=\'{}\''.format(
+                                                                get_safe_string(self.font)) if self.font else '',
                                                         box=':box=1:boxcolor={}:boxborder={}'.format(
                                                                 self.box_color, self.box_border) if self.box else '')
         return self._value
@@ -309,7 +315,7 @@ class DrawTimecode(UnaryFilterStream):
                       u'shadowy={shadowy}' \
                       u'{font}{box}{stream_out}'.format(stream_in=self._stream_in,
                                                         stream_out=self._stream_out,
-                                                        timecode=self.timecode.replace(':', '\\:'),
+                                                        timecode=get_safe_string(self.timecode),
                                                         fps=self.fps,
                                                         x=self.x,
                                                         y=self.y,
@@ -317,9 +323,8 @@ class DrawTimecode(UnaryFilterStream):
                                                         color=self.color,
                                                         shadowx=self.shadowx,
                                                         shadowy=self.shadowy,
-                                                        font=':fontfile=\'{}\''.format(self.font.replace('\\',
-                                                                                                         '\\\\').replace(
-                                                                ':', '\\:')) if self.font else '',
+                                                        font=':fontfile=\'{}\''.format(
+                                                                get_safe_string(self.font)) if self.font else '',
                                                         box=':box=1:boxcolor={}:boxborder={}'.format(
                                                                 self.box_color, self.box_border) if self.box else '')
         return self._value
@@ -353,7 +358,7 @@ class DrawFrames(UnaryFilterStream):
                       u'{font}{box}{stream_out}'.format(stream_in=self._stream_in,
                                                         stream_out=self._stream_out,
                                                         number=self.text,
-                                                        fontfile=self.font.replace('\\', '\\\\').replace(':', '\\:'),
+                                                        fontfile=get_safe_string(self.font),
                                                         start=self.start,
                                                         x=self.x,
                                                         y=self.y,
@@ -361,9 +366,8 @@ class DrawFrames(UnaryFilterStream):
                                                         color=self.color,
                                                         shadowx=self.shadowx,
                                                         shadowy=self.shadowy,
-                                                        font=':fontfile=\'{}\''.format(self.font.replace('\\',
-                                                                                                         '\\\\').replace(
-                                                                ':', '\\:')) if self.font else '',
+                                                        font=':fontfile=\'{}\''.format(
+                                                                get_safe_string(self.font)) if self.font else '',
                                                         box=':box=1:boxcolor={}:boxborder={}'.format(
                                                                 self.box_color, self.box_border) if self.box else '')
         return self._value
@@ -420,8 +424,7 @@ class Lut3d(UnaryFilterStream):
         else:
             self._value = u'{stream_in}lut3d=\'{lut}\'{stream_out}'.format(stream_in=self._stream_in,
                                                                            stream_out=self._stream_out,
-                                                                           lut=self.lut.replace('\\', '/').replace(':',
-                                                                                                                   '\\:'))
+                                                                           lut=get_safe_string(self.lut))
         return self._value
 
 
@@ -565,8 +568,8 @@ class Output(OutputStream):
 
 
 if __name__ == '__main__':
-    path = u'/Users/andyguo/Downloads/ep19_episode  中文 _4_180904.mp4'
-    path2 = '/Users/andyguo/Desktop/%03d.png'
+    path = u'/Users/andyguo/Documents/github/dayu_ffmpeg/tests/footage/media/102s.mov'
+    # path2 = '/Users/andyguo/Desktop/%03d.png'
 
     result = FFmpeg() >> Overwrite() >> \
              Input(path, sequence=False, fps=25, trim_in_frame=100, trim_out_frame=200) >> \
@@ -576,7 +579,6 @@ if __name__ == '__main__':
              PixelFormat(pixel_format='yuva444p10le', profile='4444') >> \
              WriteReel('owkeh') >> \
              Output('/Users/andyguo/Desktop/111.mov', fps=25.0)
-    print result.cmd()
 
     prev = None
     for x in result.run():
@@ -584,4 +586,3 @@ if __name__ == '__main__':
         prev = x
 
     print 'finish!!'
-
