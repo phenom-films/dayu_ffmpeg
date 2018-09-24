@@ -145,7 +145,7 @@ class Scale(UnaryFilterStream):
 class Overlay(BinaryFilterStream):
     _name = 'overlay'
 
-    def __init__(self, fg_stream, x=0, y=0):
+    def __init__(self, fg_stream, x=0, y=0, **kwargs):
         if not isinstance(fg_stream, Input):
             raise DayuFFmpegValueError
 
@@ -153,20 +153,24 @@ class Overlay(BinaryFilterStream):
         self._inputs[1] = fg_stream
         self.x = x
         self.y = y
+        self.kwargs = kwargs
 
     def __str__(self):
-        self._value = u'{stream_in}{fg}overlay=x={x}:y={y}{stream_out}'.format(fg=self._inputs[1]._stream_out,
-                                                                               stream_in=self._stream_in,
-                                                                               stream_out=self._stream_out,
-                                                                               x=self.x,
-                                                                               y=self.y)
+        self._value = u'{stream_in}{fg}overlay=x={x}:y={y}{kwargs}{stream_out}'.format(
+                fg=self._inputs[1]._stream_out,
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                x=self.x,
+                y=self.y,
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u'')
         return self._value
 
 
 class DrawBox(UnaryFilterStream):
     _name = 'drawbox'
 
-    def __init__(self, x='iw/4', y='ih/2', w='iw/2', h='ih/2', color='Black@0.85', thickness='fill'):
+    def __init__(self, x='iw/4', y='ih/4', w='iw/2', h='ih/2', color='Black@0.7', thickness='fill', **kwargs):
         super(DrawBox, self).__init__()
         self.x = x
         self.y = y
@@ -174,17 +178,22 @@ class DrawBox(UnaryFilterStream):
         self.h = h
         self.color = color
         self.thickness = thickness
+        self.kwargs = kwargs
 
     def __str__(self):
         self._value = u'{stream_in}drawbox=x={x}:y={y}:w={w}:h={h}:' \
-                      u'c={color}:t={thickness}{stream_out}'.format(stream_in=self._stream_in,
-                                                                    stream_out=self._stream_out,
-                                                                    x=self.x,
-                                                                    y=self.y,
-                                                                    w=self.w,
-                                                                    h=self.h,
-                                                                    color=self.color,
-                                                                    thickness=self.thickness)
+                      u'c={color}:t={thickness}{kwargs}{stream_out}'.format(
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                x=self.x,
+                y=self.y,
+                w=self.w,
+                h=self.h,
+                color=self.color,
+                thickness=self.thickness,
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+        )
         return self._value
 
 
@@ -193,13 +202,13 @@ class DrawEveryFrame(BinaryFilterStream):
 
     def __init__(self, text_list, x='w/2', y='h/2', size=32, color='white', font=None,
                  box=False, box_color='black@0.5', boxborder=2,
-                 shadow_x=0, shadow_y=0):
+                 shadow_x=0, shadow_y=0, **kwargs):
         super(DrawEveryFrame, self).__init__()
         self._is_combine_op = True
         for index, t in enumerate(text_list):
             self.combine_op.append(DrawText(t, x, y, size, color, font, box, box_color,
                                             boxborder, shadow_x, shadow_y,
-                                            'eq(n\\,{})'.format(index)))
+                                            'eq(n\\,{})'.format(index), **kwargs))
 
 
 class DrawText(UnaryFilterStream):
@@ -207,7 +216,7 @@ class DrawText(UnaryFilterStream):
 
     def __init__(self, text, x='w/2', y='h/2', size=32, color='white', font=None,
                  box=False, box_color='black@0.5', boxborder=2,
-                 shadow_x=0, shadow_y=0, enable=None):
+                 shadow_x=0, shadow_y=0, enable=None, **kwargs):
         super(DrawText, self).__init__()
         self.text = text
         self.x = x
@@ -221,29 +230,29 @@ class DrawText(UnaryFilterStream):
         self.shadowx = shadow_x
         self.shadowy = shadow_y
         self.enable = enable
+        self.kwargs = kwargs
 
     def __str__(self):
         self._value = u'{stream_in}drawtext=text=\'{text}\':x={x}:' \
                       u'y={y}:fontsize={size}:' \
                       u'fontcolor={color}:shadowx={shadowx}:' \
                       u'shadowy={shadowy}' \
-                      u'{font}{box}{enable}{stream_out}'.format(stream_in=self._stream_in,
-                                                                stream_out=self._stream_out,
-                                                                text=get_safe_string(self.text),
-                                                                x=self.x,
-                                                                y=self.y,
-                                                                size=self.size,
-                                                                color=self.color,
-                                                                shadowx=self.shadowx,
-                                                                shadowy=self.shadowy,
-                                                                font=':fontfile=\'{}\''.format(
-                                                                        get_safe_string(
-                                                                                self.font)) if self.font else '',
-                                                                box=':box=1:boxcolor={}:boxborder={}'.format(
-                                                                        self.box_color,
-                                                                        self.box_border) if self.box else '',
-                                                                enable=':enable={}'.format(
-                                                                        self.enable) if self.enable else '')
+                      u'{font}{box}{enable}{kwargs}{stream_out}'.format(
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                text=get_safe_string(self.text),
+                x=self.x,
+                y=self.y,
+                size=self.size,
+                color=self.color,
+                shadowx=self.shadowx,
+                shadowy=self.shadowy,
+                font=':fontfile=\'{}\''.format(get_safe_string(self.font)) if self.font else '',
+                box=':box=1:boxcolor={}:boxborder={}'.format(self.box_color, self.box_border) if self.box else '',
+                enable=':enable={}'.format(self.enable) if self.enable else '',
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+        )
         return self._value
 
 
@@ -252,7 +261,7 @@ class DrawDate(UnaryFilterStream):
 
     def __init__(self, x='w/2', y='h/2', size=32, color='white', font=None, date_format='%{localtime:%Y-%m-%d}',
                  box=False, box_color='black@0.5', boxborder=2,
-                 shadow_x=0, shadow_y=0):
+                 shadow_x=0, shadow_y=0, **kwargs):
         super(DrawDate, self).__init__()
         self.date_format = date_format
         self.x = x
@@ -265,25 +274,28 @@ class DrawDate(UnaryFilterStream):
         self.box_border = boxborder
         self.shadowx = shadow_x
         self.shadowy = shadow_y
+        self.kwargs = kwargs
 
     def __str__(self):
         self._value = u'{stream_in}drawtext=text=\'{date_format}\':' \
                       u'x={x}:y={y}:fontsize={size}:' \
                       u'fontcolor={color}:shadowx={shadowx}:' \
                       u'shadowy={shadowy}' \
-                      u'{font}{box}{stream_out}'.format(stream_in=self._stream_in,
-                                                        stream_out=self._stream_out,
-                                                        date_format=get_safe_string(self.date_format),
-                                                        x=self.x,
-                                                        y=self.y,
-                                                        size=self.size,
-                                                        color=self.color,
-                                                        shadowx=self.shadowx,
-                                                        shadowy=self.shadowy,
-                                                        font=':fontfile=\'{}\''.format(
-                                                                get_safe_string(self.font)) if self.font else '',
-                                                        box=':box=1:boxcolor={}:boxborder={}'.format(
-                                                                self.box_color, self.box_border) if self.box else '')
+                      u'{font}{box}{kwargs}{stream_out}'.format(
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                date_format=get_safe_string(self.date_format),
+                x=self.x,
+                y=self.y,
+                size=self.size,
+                color=self.color,
+                shadowx=self.shadowx,
+                shadowy=self.shadowy,
+                font=':fontfile=\'{}\''.format(get_safe_string(self.font)) if self.font else '',
+                box=':box=1:boxcolor={}:boxborder={}'.format(self.box_color, self.box_border) if self.box else '',
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+        )
         return self._value
 
 
@@ -292,7 +304,7 @@ class DrawTimecode(UnaryFilterStream):
 
     def __init__(self, x='w/2', y='h/2', size=32, color='white', font=None, timecode='00:00:00:00', fps=24,
                  box=False, box_color='black@0.5', boxborder=2,
-                 shadow_x=0, shadow_y=0):
+                 shadow_x=0, shadow_y=0, **kwargs):
         super(DrawTimecode, self).__init__()
         self.timecode = timecode
         self.fps = fps
@@ -306,26 +318,28 @@ class DrawTimecode(UnaryFilterStream):
         self.box_border = boxborder
         self.shadowx = shadow_x
         self.shadowy = shadow_y
+        self.kwargs = kwargs
 
     def __str__(self):
         self._value = u'{stream_in}drawtext=timecode=\'{timecode}\':r={fps}:x={x}:' \
                       u'y={y}:fontsize={size}:' \
                       u'fontcolor={color}:shadowx={shadowx}:' \
                       u'shadowy={shadowy}' \
-                      u'{font}{box}{stream_out}'.format(stream_in=self._stream_in,
-                                                        stream_out=self._stream_out,
-                                                        timecode=get_safe_string(self.timecode),
-                                                        fps=self.fps,
-                                                        x=self.x,
-                                                        y=self.y,
-                                                        size=self.size,
-                                                        color=self.color,
-                                                        shadowx=self.shadowx,
-                                                        shadowy=self.shadowy,
-                                                        font=':fontfile=\'{}\''.format(
-                                                                get_safe_string(self.font)) if self.font else '',
-                                                        box=':box=1:boxcolor={}:boxborder={}'.format(
-                                                                self.box_color, self.box_border) if self.box else '')
+                      u'{font}{box}{kwargs}{stream_out}'.format(
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                timecode=get_safe_string(self.timecode),
+                fps=self.fps,
+                x=self.x,
+                y=self.y,
+                size=self.size,
+                color=self.color,
+                shadowx=self.shadowx,
+                shadowy=self.shadowy, font=':fontfile=\'{}\''.format(get_safe_string(self.font)) if self.font else '',
+                box=':box=1:boxcolor={}:boxborder={}'.format(self.box_color, self.box_border) if self.box else '',
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+        )
         return self._value
 
 
@@ -334,7 +348,7 @@ class DrawFrames(UnaryFilterStream):
 
     def __init__(self, text='%{n}', x='w/2', y='h/2', size=32, color='white', font=None, start=1001,
                  box=False, box_color='black@0.5', boxborder=2,
-                 shadow_x=0, shadow_y=0):
+                 shadow_x=0, shadow_y=0, **kwargs):
         super(DrawFrames, self).__init__()
         self.text = text
         self.start = start
@@ -348,105 +362,127 @@ class DrawFrames(UnaryFilterStream):
         self.box_border = boxborder
         self.shadowx = shadow_x
         self.shadowy = shadow_y
+        self.kwargs = kwargs
 
     def __str__(self):
         self._value = u'{stream_in}drawtext=text=\'{number}\':start_number={start}:x={x}:' \
                       u'y={y}:fontsize={size}:' \
                       u'fontcolor={color}:shadowx={shadowx}:' \
                       u'shadowy={shadowy}' \
-                      u'{font}{box}{stream_out}'.format(stream_in=self._stream_in,
-                                                        stream_out=self._stream_out,
-                                                        number=self.text,
-                                                        fontfile=get_safe_string(self.font),
-                                                        start=self.start,
-                                                        x=self.x,
-                                                        y=self.y,
-                                                        size=self.size,
-                                                        color=self.color,
-                                                        shadowx=self.shadowx,
-                                                        shadowy=self.shadowy,
-                                                        font=':fontfile=\'{}\''.format(
-                                                                get_safe_string(self.font)) if self.font else '',
-                                                        box=':box=1:boxcolor={}:boxborder={}'.format(
-                                                                self.box_color, self.box_border) if self.box else '')
+                      u'{font}{box}{kwargs}{stream_out}'.format(
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                number=self.text,
+                fontfile=get_safe_string(self.font),
+                start=self.start,
+                x=self.x,
+                y=self.y,
+                size=self.size,
+                color=self.color,
+                shadowx=self.shadowx,
+                shadowy=self.shadowy,
+                font=':fontfile=\'{}\''.format(get_safe_string(self.font)) if self.font else '',
+                box=':box=1:boxcolor={}:boxborder={}'.format(self.box_color, self.box_border) if self.box else '',
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+        )
         return self._value
 
 
 class DrawMask(UnaryFilterStream):
     _name = 'drawbox'
 
-    def __init__(self, ratio, color='black'):
+    def __init__(self, ratio, color='black', **kwargs):
         super(DrawMask, self).__init__()
         self.ratio = ratio
         self.color = color
+        self.kwargs = kwargs
 
     def __str__(self):
         self._value = u'{stream_in}drawbox=x={x}:y={y}:w={w}:h={h}:' \
-                      u'c={color}:t={thickness}{alpha}{stream_out}'.format(stream_in=self._stream_in,
-                                                                           stream_out=self._stream_out,
-                                                                           x='-t',
-                                                                           y='0',
-                                                                           w='iw+t*2',
-                                                                           h='ih',
-                                                                           color=self.color,
-                                                                           thickness='(ih-(iw/{}))/2'.format(
-                                                                                   self.ratio),
-                                                                           alpha=',format=yuv444p' if '@' in self.color else '')
+                      u'c={color}:t={thickness}{alpha}{kwargs}{stream_out}'.format(
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                x='-t',
+                y='0',
+                w='iw+t*2',
+                h='ih',
+                color=self.color,
+                thickness='(ih-(iw/{}))/2'.format(self.ratio),
+                alpha=',format=yuv444p' if '@' in self.color else '',
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+        )
         return self._value
 
 
 class AspectRatio(UnaryFilterStream):
     _name = 'setsar'
 
-    def __init__(self, sar='1'):
+    def __init__(self, sar='1', **kwargs):
         super(AspectRatio, self).__init__()
         self.sar = sar
+        self.kwargs = kwargs
 
     def __str__(self):
-        self._value = u'{stream_in}setsar=sar={sar}' \
-                      u'{stream_out}'.format(stream_in=self._stream_in,
-                                             stream_out=self._stream_out,
-                                             sar='/'.join(map(str, float(self.sar).as_integer_ratio())))
+        self._value = u'{stream_in}setsar=sar={sar}{kwargs}' \
+                      u'{stream_out}'.format(
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                sar='/'.join(map(str, float(self.sar).as_integer_ratio())),
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+        )
         return self._value
 
 
 class Lut3d(UnaryFilterStream):
     _name = 'lut3d'
 
-    def __init__(self, lut_file):
+    def __init__(self, lut_file, **kwargs):
         super(Lut3d, self).__init__()
         self.lut = lut_file
+        self.kwargs = kwargs
 
     def __str__(self):
         if not self.lut:
             self._value = u''
         else:
-            self._value = u'{stream_in}lut3d=\'{lut}\'{stream_out}'.format(stream_in=self._stream_in,
-                                                                           stream_out=self._stream_out,
-                                                                           lut=get_safe_string(self.lut))
+            self._value = u'{stream_in}lut3d=\'{lut}\'{stream_out}'.format(
+                    stream_in=self._stream_in,
+                    stream_out=self._stream_out,
+                    lut=get_safe_string(self.lut),
+                    kwargs=u':{}'.format(
+                            u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+            )
         return self._value
 
 
 class Pad(UnaryFilterStream):
     _name = 'pad'
 
-    def __init__(self, w=10, h=10, x='(ow-iw)/2', y='(oh-ih)/2', color='black'):
+    def __init__(self, w=10, h=10, x='(ow-iw)/2', y='(oh-ih)/2', color='black', **kwargs):
         super(Pad, self).__init__()
         self.w = w
         self.h = h
         self.x = x
         self.y = y
         self.color = color
+        self.kwargs = kwargs
 
     def __str__(self):
         self._value = u'{stream_in}pad=w={w}:h={h}:x={x}:y={y}:' \
-                      u'color={color}{stream_out}'.format(stream_in=self._stream_in,
-                                                          stream_out=self._stream_out,
-                                                          w=self.w,
-                                                          h=self.h,
-                                                          x=self.x,
-                                                          y=self.y,
-                                                          color=self.color)
+                      u'color={color}{kwargs}{stream_out}'.format(
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                w=self.w,
+                h=self.h,
+                x=self.x,
+                y=self.y,
+                color=self.color,
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u''
+        )
         return self._value
 
 
@@ -455,15 +491,16 @@ class GeneralUnaryFilter(UnaryFilterStream):
 
     def __init__(self, filter_name, **kwargs):
         super(GeneralUnaryFilter, self).__init__()
-        self.param = kwargs
+        self.kwargs = kwargs
         self.filter_name = filter_name
 
     def __str__(self):
-        temp = ['{}={}'.format(key, value) for key, value in self.param.items()]
-        self._value = u'{stream_in}{filter}={args}{stream_out}'.format(stream_in=self._stream_in,
-                                                                       stream_out=self._stream_out,
-                                                                       filter=self.filter_name,
-                                                                       args=':'.join(temp))
+        self._value = u'{stream_in}{filter}={kwargs}{stream_out}'.format(
+                stream_in=self._stream_in,
+                stream_out=self._stream_out,
+                filter=self.filter_name,
+                kwargs=u':{}'.format(
+                        u':'.join((u'{}={}'.format(k, v) for k, v in self.kwargs.items()))) if self.kwargs else u'')
         return self._value
 
 
