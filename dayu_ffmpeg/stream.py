@@ -146,6 +146,9 @@ class Overlay(BinaryFilterStream):
     _name = 'overlay'
 
     def __init__(self, fg_stream, x=0, y=0):
+        if not isinstance(fg_stream, Input):
+            raise DayuFFmpegValueError
+
         super(Overlay, self).__init__()
         self._inputs[1] = fg_stream
         self.x = x
