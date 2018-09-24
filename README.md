@@ -1,5 +1,6 @@
 # dayu_ffmpeg
 
+[![pypi](https://img.shields.io/badge/pypi-0.3-blue.svg)](https://pypi.org/project/dayu-ffmpeg/)
 [![python](https://img.shields.io/badge/python-2.7-blue.svg)]()
 [![build status](https://travis-ci.org/phenom-films/dayu_ffmpeg.svg?branch=master)](https://travis-ci.org/phenom-films/dayu_ffmpeg)
 [![github license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/phenom-films/dayu_ffmpeg/blob/master/license)
