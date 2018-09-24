@@ -34,15 +34,15 @@ dayu_ffmpeg 是针对ffmpeg 命令行的python 封装。 ffmpeg
 
    from dayu_ffmpeg.stream input *
 
-   result = ffmpeg() >> \
-            overwrite() >> \
-            input('/some/input/file.mov') >> \
-            drawmask(2.39) >> \
-            scale(1920, 1080) >> \
-            writereel('reelname') >> \
-            writetimecode('11:22:11:22') >> \
-            codec(video='prores_ks') >> \
-            output('/some/output/file.mov')
+   result = FFmpeg() >> \
+            Overwrite() >> \
+            Input('/some/input/file.mov') >> \
+            Drawmask(2.39) >> \
+            Scale(1920, 1080) >> \
+            Writereel('reelname') >> \
+            Writetimecode('11:22:11:22') >> \
+            Codec(video='prores_ks') >> \
+            Output('/some/output/file.mov')
 
 dayu_ffmpeg 的基本使用
 ======================
@@ -109,10 +109,10 @@ Overlay 的使用
            raise               # 如果指令错误，会抛出异常
 
 .. |pypi| image:: https://img.shields.io/badge/pypi-0.3-blue.svg
-   :target: https://pypi.org/project/dayu-ffmpeg/
+    :target: https://pypi.org/project/dayu-ffmpeg/
 .. |python| image:: https://img.shields.io/badge/python-2.7-blue.svg
-   :target: 
+    :target:
 .. |build status| image:: https://travis-ci.org/phenom-films/dayu_ffmpeg.svg?branch=master
-   :target: https://travis-ci.org/phenom-films/dayu_ffmpeg
+    :target: https://travis-ci.org/phenom-films/dayu_ffmpeg
 .. |github license| image:: https://img.shields.io/github/license/mashape/apistatus.svg
-   :target: https://github.com/phenom-films/dayu_ffmpeg/blob/master/license
+    :target: https://github.com/phenom-films/dayu_ffmpeg/blob/master/license
