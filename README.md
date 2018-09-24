@@ -31,15 +31,15 @@ ffmpeg 的功能相当强大，但是复杂的终端指令往往让人无法使�
 ```python
 from dayu_ffmpeg.stream input *
 
-result = ffmpeg() >> \
-         overwrite() >> \
-         input('/some/input/file.mov') >> \
-         drawmask(2.39) >> \
-         scale(1920, 1080) >> \
-         writereel('reelname') >> \
-         writetimecode('11:22:11:22') >> \
-         codec(video='prores_ks') >> \
-         output('/some/output/file.mov')
+result = FFmpeg() >> \
+         Overwrite() >> \
+         Input('/some/input/file.mov') >> \
+         Drawmask(2.39) >> \
+         Scale(1920, 1080) >> \
+         Writereel('reelname') >> \
+         Writetimecode('11:22:11:22') >> \
+         Codec(video='prores_ks') >> \
+         Output('/some/output/file.mov')
 ```
 
 
