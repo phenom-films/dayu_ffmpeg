@@ -15,3 +15,5 @@ def test___init__():
 def test___str__():
     overlay = Overlay(Input('/some/overlay/logo.mov'))
     assert overlay.__str__() == 'overlay=x=0:y=0'
+    overlay = Overlay(Input('/some/overlay/logo.mov'), format='yuv444')
+    assert overlay.__str__() == 'overlay=x=0:y=0:format=yuv444'

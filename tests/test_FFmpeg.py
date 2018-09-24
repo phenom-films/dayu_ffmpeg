@@ -3,22 +3,19 @@
 
 __author__ = 'andyguo'
 
-from unittest import TestCase
-
+import pytest
 from dayu_ffmpeg.stream import *
 
 
-class TestFFmpeg(TestCase):
-    def test___init__(self):
-        self.assertIsNotNone(FFmpeg())
-        self.assertIsNotNone(FFmpeg('ffmpeg'))
-        self.assertIsNotNone(FFmpeg('ffmpeg'))
-        self.assertRaises(DayuFFmpegValueError, FFmpeg, [])
-        self.assertRaises(DayuFFmpegValueError, FFmpeg, (1, 2, 3))
-        self.assertRaises(DayuFFmpegValueError, FFmpeg, {1: 1})
-        self.assertRaises(DayuFFmpegValueError, FFmpeg, FFmpeg())
+def test___init__():
+    assert FFmpeg() is not None
+    assert FFmpeg('ffmpeg') is not None
+    assert FFmpeg('ffmpeg') is not None
+    pytest.raises(DayuFFmpegValueError, FFmpeg, [])
+    pytest.raises(DayuFFmpegValueError, FFmpeg, (1, 2, 3))
+    pytest.raises(DayuFFmpegValueError, FFmpeg, {1: 1})
+    pytest.raises(DayuFFmpegValueError, FFmpeg, FFmpeg())
 
-    def test___str__(self):
-        self.assertEqual(FFmpeg().__str__(), FFMPEG_EXEC[sys.platform].join(['\"', '\"']))
-        self.assertEqual(FFmpeg('some/ffmpeg').__str__(), '\"some/ffmpeg\"')
-        self.assertEqual(FFmpeg(u'中文').__str__(), u'\"中文\"')
+    assert FFmpeg().__str__() == FFMPEG_EXEC[sys.platform].join(['\"', '\"'])
+    assert FFmpeg('some/ffmpeg').__str__() == '\"some/ffmpeg\"'
+    assert FFmpeg(u'中文').__str__() == u'\"中文\"'

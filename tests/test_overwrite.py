@@ -3,20 +3,17 @@
 
 __author__ = 'andyguo'
 
-from unittest import TestCase
-
 from dayu_ffmpeg.stream import *
 
 
-class TestOverwrite(TestCase):
-    def test___str__(self):
-        self.assertEqual(Overwrite().overwrite, True)
-        self.assertEqual(Overwrite(True).overwrite, True)
-        self.assertEqual(Overwrite(False).overwrite, False)
-        self.assertEqual(Overwrite(None).overwrite, None)
-        self.assertEqual(Overwrite().__str__(), u'-y')
-        self.assertEqual(Overwrite('yes').__str__(), u'-y')
-        self.assertEqual(Overwrite(1).__str__(), u'-y')
-        self.assertEqual(Overwrite(False).__str__(), u'-n')
-        self.assertEqual(Overwrite(None).__str__(), u'-n')
-        self.assertEqual(Overwrite(0).__str__(), u'-n')
+def test___str__():
+    assert Overwrite().overwrite == True
+    assert Overwrite(True).overwrite == True
+    assert Overwrite(False).overwrite == False
+    assert Overwrite(None).overwrite == None
+    assert Overwrite().__str__() == u'-y'
+    assert Overwrite('yes').__str__() == u'-y'
+    assert Overwrite(1).__str__() == u'-y'
+    assert Overwrite(False).__str__() == u'-n'
+    assert Overwrite(None).__str__() == u'-n'
+    assert Overwrite(0).__str__() == u'-n'
