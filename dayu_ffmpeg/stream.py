@@ -211,6 +211,73 @@ class DrawEveryFrame(BinaryFilterStream):
                                             'eq(n\\,{})'.format(index), **kwargs))
 
 
+class DrawSubtitle(BinaryFilterStream):
+    _name = 'subtitles'
+
+    def __init__(self, subtilte_file, use_python_list=False,
+                 font_name=None, font_folder=None, size=12, color=0xffffff,
+                 back_color=0x000000, outline=0,
+                 h_alignment='center', v_alignment='bottom', l_margin=20, r_margin=20, v_margin=20, **kwargs):
+        super(DrawSubtitle, self).__init__()
+        self.subtitle_file = subtilte_file
+        self.use_python_list = use_python_list
+        self.font_name = font_name
+        self.font_folder = font_folder
+        self.size = size
+        self.color = color
+        self.back_color = back_color
+        self.outline = outline
+        self.h_alignment = h_alignment
+        self.v_alignment = v_alignment
+        self.l_margin = l_margin
+        self.r_margin = r_margin
+        self.v_margin = v_margin
+        self.kwargs = kwargs
+
+    def __str__(self):
+        h_dict = {'left': 1, 'center': 2, 'right': 3}
+        v_dict = {'bottom': 0, 'top': 4, 'center': 8}
+
+        if self.use_python_list:
+            import tempfile
+            from dayu_timecode import DayuTimeCode
+            temp_srt = tempfile.NamedTemporaryFile().name + '.srt'
+            srt_string = u'\n\n'.join([u'{count}\n'
+                                       u'{start} --> {end}\n'
+                                       u'{sub}'.format(count=index + 1,
+                                                       start=DayuTimeCode(max(0.0, index - 0.1)).timecode(
+                                                               'SRT_TIMECODE'),
+                                                       end=DayuTimeCode(index + 0.5).timecode('SRT_TIMECODE'),
+                                                       sub=x.strip())
+                                       for index, x in enumerate(self.subtitle_file)
+                                       ])
+
+            with open(temp_srt, 'w') as srt_file:
+                srt_file.write(srt_string.encode('utf-8'))
+            self.subtitle_file = temp_srt
+
+        self.value = u'{stream_in}subtitles=\'{sub_file}\'{font_folder}:' \
+                     u'force_style=\'Fontsize={size},Alignment={alignment},PrimaryColour={color},' \
+                     u'BackColour={bg_color},Outline={outline},' \
+                     u'MarginL={lmargin},MarginR={rmargin},MarginV={vmargin}' \
+                     u'{fontname}\'' \
+                     u'{stream_out}'.format(stream_in=self._stream_in,
+                                            stream_out=self._stream_out,
+                                            sub_file=get_safe_string(self.subtitle_file),
+                                            font_folder=u':fontsdir=\'{}\''.format(
+                                                    get_safe_string(self.font_folder)) if self.font_folder else '',
+                                            size=self.size,
+                                            alignment=h_dict.get(self.h_alignment, 2) + v_dict.get(self.v_alignment, 0),
+                                            color=self.color,
+                                            bg_color=self.back_color,
+                                            outline=self.outline,
+                                            lmargin=self.l_margin,
+                                            rmargin=self.r_margin,
+                                            vmargin=self.v_margin,
+                                            fontname=u',Fontname={}'.format(self.font_name) if self.font_name else '')
+        return self.value
+
+
 class DrawText(UnaryFilterStream):
     _name = 'drawtext'
 
