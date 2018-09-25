@@ -109,10 +109,10 @@ Overlay 的使用
            raise               # 如果指令错误，会抛出异常
 
 .. |pypi| image:: https://img.shields.io/badge/pypi-0.3-blue.svg
-    :target: https://pypi.org/project/dayu-ffmpeg/
+   :target: https://pypi.org/project/dayu-ffmpeg/
 .. |python| image:: https://img.shields.io/badge/python-2.7-blue.svg
-    :target:
+   :target:
 .. |build status| image:: https://travis-ci.org/phenom-films/dayu_ffmpeg.svg?branch=master
-    :target: https://travis-ci.org/phenom-films/dayu_ffmpeg
+   :target: https://travis-ci.org/phenom-films/dayu_ffmpeg
 .. |github license| image:: https://img.shields.io/github/license/mashape/apistatus.svg
-    :target: https://github.com/phenom-films/dayu_ffmpeg/blob/master/license
+   :target: https://github.com/phenom-films/dayu_ffmpeg/blob/master/license
