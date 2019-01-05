@@ -6,6 +6,7 @@ __author__ = 'andyguo'
 from base import BaseNode
 from dayu_ffmpeg.config import SINGLE_MEDIA_FORMAT
 
+
 class BaseIONode(BaseNode):
     type = 'base_io_node'
 
@@ -14,6 +15,7 @@ class BaseIONode(BaseNode):
 
     def complex_cmd_string(self):
         return self.simple_cmd_string()
+
 
 class Input(BaseIONode):
     type = 'input'
@@ -29,8 +31,6 @@ class Input(BaseIONode):
         super(Input, self).__init__(**kwargs)
 
 
-
-
 class Output(BaseIONode):
     type = 'output'
     max_output_num = 0
@@ -43,9 +43,44 @@ class Output(BaseIONode):
         self.duration = duration
         super(Output, self).__init__(**kwargs)
 
+    def cmd(self):
+        self._ensure_ad_hoc()
 
-if __name__ == '__main__':
-    a = Input(name='hello')
-    print a.__dict__
-    print a.name
-    print a.filename
+        all_nodes = list(self.traverse_inputs())[::-1] + [self]
+        global_cmd = self._generate_global_cmd()
+        input_cmd = self._generate_input_cmd(all_nodes)
+        filter_cmd = self._generate_filter_cmd(all_nodes)
+        output_cmd = self._generate_output_cmd(all_nodes)
+
+        return ' '.join([global_cmd, input_cmd, filter_cmd, output_cmd])
+
+    def _generate_global_cmd(self):
+        from globals import FFMPEG, Overwrite
+        global_nodes = [FFMPEG(), Overwrite()]
+        cmd = ' '.join(n.simple_cmd_string() for n in global_nodes)
+        return cmd
+
+    def _generate_output_cmd(self, all_nodes):
+        from codec import BaseCodecNode
+        output_nodes = [n for n in all_nodes if isinstance(n, (Output, BaseCodecNode))]
+        cmd = ' '.join(n.simple_cmd_string() for n in output_nodes)
+        return cmd
+
+    def _generate_filter_cmd(self, all_nodes):
+        from filters import BaseFilterNode
+        filter_nodes = [n for n in all_nodes if isinstance(n, BaseFilterNode)]
+        cmd = '-vf \"{cmd}\"'.format(cmd=','.join(n.simple_cmd_string() for n in filter_nodes))
+        return cmd
+
+    def _generate_input_cmd(self, all_nodes):
+        input_nodes = [n for n in all_nodes if isinstance(n, Input)]
+        cmd = ' '.join([n.simple_cmd_string() for n in input_nodes])
+        return cmd
+
+    def _ensure_ad_hoc(self):
+        from dayu_ffmpeg.errors.base import DayuFFmpegException
+        for n in self.traverse_inputs():
+            if n.max_input_num > 1:
+                raise DayuFFmpegException('{} input count is not 1, not supported in ad-hoc mode'.format(n))
+            if self.validate() is False:
+                raise DayuFFmpegException('{} is not validate, may missing input'.format(n))
