@@ -37,6 +37,9 @@ class UniqueList(list):
         if o not in self or o is None:
             super(UniqueList, self).__setitem__(i, o)
 
+    def to_script(self):
+        return [x.to_script() if x else None for x in self]
+
 
 class AbstractNode(object):
     type = 'abstract_node'
@@ -67,7 +70,8 @@ class AbstractNode(object):
     def to_script(self):
         raise NotImplementedError()
 
-    def from_script(self):
+    @classmethod
+    def from_script(cls, object):
         raise NotImplementedError()
 
 
@@ -86,6 +90,23 @@ class BaseNode(AbstractNode):
 
     def __contains__(self, item):
         return False
+
+    def __rshift__(self, other):
+        from dayu_ffmpeg.network import AbstractHolder, BaseGroupNode
+        from dayu_ffmpeg.errors.base import DayuFFmpegException
+        if not isinstance(other, BaseNode):
+            raise DayuFFmpegException('{} not a BaseNode!'.format(other))
+        if isinstance(other, (AbstractHolder, BaseGroupNode)):
+            raise DayuFFmpegException('{} not support in ad-hoc mode, use complex mode instead!'.format(other))
+        if self.max_output_num != 1:
+            raise DayuFFmpegException('{}\'s output num is not 1, '
+                                      'so not support in ad-hoc mode, use complex mode instead!'.format(self))
+        if other.max_input_num != 1:
+            raise DayuFFmpegException('{}\'s input num is not 1, '
+                                      'so not support in ad-hoc mode, use complex mode instead!'.format(other))
+
+        other.set_input(self)
+        return other
 
     def check_allow_connect(self, node, input_index, output_index):
         if self is node:
@@ -260,3 +281,25 @@ class BaseNode(AbstractNode):
             current = current.parent
 
         return result
+
+    def to_script(self):
+        from copy import deepcopy
+        result = deepcopy(self.__dict__)
+        result['id'] = self.id
+        result['type'] = self.type
+        result['name'] = self.name
+        result['label'] = self.label
+        result['metadata'] = self.metadata
+        result['pos_x'] = self.pos_x
+        result['pos_y'] = self.pos_y
+        result['selected'] = self.selected
+        result['parent'] = self.parent.id if self.parent else None
+        result['in_edges'] = [e.to_script() for e in self.in_edges]
+        result['out_edges'] = [g.to_script() for g in self.out_edges]
+        return result
+
+    @classmethod
+    def from_script(cls, object):
+        instance = cls()
+        instance.__dict__.update(object)
+        return instance
