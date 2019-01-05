@@ -47,11 +47,12 @@ class AbstractNode(object):
         self.id = kwargs.get('id', uuid4().hex)
         self.name = None
         self.label = None
+        self._cmd = None
         self.visited = None
         self.pos_x = -1.0
         self.pos_y = -1.0
         self.selected = False
-        self.metadata = None
+        self.metadata = {}
         self.parent = kwargs.get('parent', None)
 
     def set_input(self, node, index=None):
@@ -79,6 +80,9 @@ class BaseNode(AbstractNode):
         super(BaseNode, self).__init__(*args, **kwargs)
         self.in_edges = UniqueList([None for _ in range(self.max_input_num)])
         self.out_edges = [UniqueList() for _ in range(self.max_output_num)]
+        self.stream_in_num = []
+        self.stream_out_num = None
+        self.__dict__.update(**kwargs)
 
     def __contains__(self, item):
         return False
@@ -106,6 +110,9 @@ class BaseNode(AbstractNode):
             return False
 
         return True
+
+    def set_output(self, node, output_index=None, input_index=None):
+        node.set_input(self, input_index, output_index)
 
     def set_input(self, node, input_index=None, output_index=None):
         from dayu_ffmpeg.network.edge.base import DirectEdge
@@ -158,3 +165,98 @@ class BaseNode(AbstractNode):
         output_group_index = output_group_index or 0
         all_edges = (e for e in self.out_edges[output_group_index] if e)
         return [e.endpoints.right for e in all_edges if e.endpoints.right]
+
+    def connected_in_edges(self):
+        return [e for e in self.in_edges if e]
+
+    def connected_out_edges(self, output_group_index=None):
+        output_group_index = output_group_index or 0
+        return [e for e in self.out_edges[output_group_index] if e]
+
+    def traverse_inputs(self, recursive=True):
+        from collections import deque
+        from dayu_ffmpeg.network import BaseGroupNode
+
+        queue = deque()
+        queue.extend(self.connected_in_edges())
+        while queue:
+            item = queue.popleft()
+            if isinstance(item, BaseNode):
+                yield item
+                queue.extendleft(item.connected_in_edges()[::-1])
+                continue
+            node = item.endpoints.left
+            if isinstance(node, BaseGroupNode):
+                if recursive:
+                    queue.appendleft(node.outputholders[item.output_group_index])
+                else:
+                    yield node
+                    queue.extendleft(node.connected_in_edges()[::-1])
+            else:
+                yield node
+                queue.extendleft(node.connected_in_edges()[::-1])
+
+    def traverse_outputs(self, recursive=True):
+        from collections import deque
+        from itertools import chain
+        from dayu_ffmpeg.network import BaseGroupNode
+
+        queue = deque()
+        queue.extend(chain(*self.out_edges))
+
+        while queue:
+            item = queue.popleft()
+            if not item:
+                continue
+            if isinstance(item, BaseNode) and not isinstance(item, BaseGroupNode):
+                yield item
+                queue.extendleft(list(chain(*item.out_edges))[::-1])
+                continue
+
+            e = item
+            node = e.endpoints.right
+            if isinstance(node, BaseGroupNode):
+                if recursive:
+                    index = node.in_edges.index(e)
+                    queue.appendleft(node.inputholders[index])
+                else:
+                    yield node
+                    queue.extendleft(list(chain(*node.out_edges))[::-1])
+            else:
+                yield node
+                queue.extendleft(list(chain(*node.out_edges))[::-1])
+
+    def validate(self):
+        if self.max_input_num == 0:
+            return True
+        if self.max_input_num > 0 and len(self.connected_inputs()) == self.max_input_num:
+            return True
+        return False
+
+    def reset_visited(self):
+        self.visited = False
+
+    def origin(self):
+        return self
+
+    def set_stream_in_num(self):
+        from group import BaseGroupNode
+        self.stream_in_num = []
+        if self.max_input_num > 0 and self.connected_in_edges():
+            for e in self.connected_in_edges():
+                n = e.endpoints.left
+                if isinstance(n, BaseGroupNode):
+                    n = n.outputholders[e.output_group_index]
+                self.stream_in_num.append(n.origin().stream_out_num)
+
+    def set_stream_out_num(self):
+        self.stream_out_num = self.origin().id
+
+    def hierarchy(self):
+        result = []
+        current = self.parent
+        while current:
+            result.append(current)
+            current = current.parent
+
+        return result

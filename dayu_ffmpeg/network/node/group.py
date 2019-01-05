@@ -9,6 +9,7 @@ from base import AbstractNode, BaseNode, UniqueList
 class BaseGroupNode(BaseNode):
     type = 'base_group_node'
     max_input_num = 0
+    max_output_num = 0
 
     def __init__(self, *args, **kwargs):
         super(BaseGroupNode, self).__init__(*args, **kwargs)
@@ -54,9 +55,29 @@ class BaseGroupNode(BaseNode):
             self.inside_nodes.append(node)
             return node
 
+    def reset_visited(self):
+        for n in self.inside_nodes:
+            n.reset_visited()
+
+    def traverse_children(self, recursive=False):
+        from collections import deque
+        queue = deque()
+        queue.extend(self.inside_nodes)
+
+        while queue:
+            current = queue.popleft()
+            yield current
+            if recursive:
+                if isinstance(current, BaseGroupNode):
+                    queue.extendleft(current.inside_nodes[::-1])
+
 
 class Group(BaseGroupNode):
     type = 'group'
+
+
+class ComplexFilterGroup(Group):
+    type = 'filter_complex'
 
 
 class RootNode(Group):
@@ -67,3 +88,87 @@ class RootNode(Group):
             raise AttributeError('root node can\'t set parent!')
         else:
             super(RootNode, self).__setattr__(key, value)
+
+    def cmd(self):
+        from globals import FFMPEG, Overwrite
+        from holder import AbstractHolder
+        self.reset_visited()
+        all_outputs = self._find_all_outputs()
+        self._ensure_all_nodes_are_connected(all_outputs)
+        all_inputs = self._find_all_inputs(all_outputs)
+        all_complex_filters = [n for n in self._find_all_complex_filters() if n.visited]
+        all_bound_nodes = self._find_all_bound(all_complex_filters, all_outputs)
+        self._set_all_node_stream_in_num(all_outputs)
+
+
+        all_global_nodes = [FFMPEG(), Overwrite()]
+
+        global_cmd = ' '.join([n.complex_cmd_string() for n in all_global_nodes])
+        input_cmd = ' '.join([n.complex_cmd_string() for n in all_inputs])
+        print input_cmd
+        useful_filters = [n for n in all_complex_filters if not isinstance(n, AbstractHolder)]
+        complex_filter_cmd = '-filter_complex \"{cmd}\"'.format(
+                cmd=';'.join([n.complex_cmd_string() for n in useful_filters]))
+        output_cmd_list = []
+        for o in all_bound_nodes:
+            temp = '-map {stream} '.format(stream=''.join(['[{}]'.format(x) for x in o[0].stream_in_num]))
+            temp += ' '.join([n.complex_cmd_string() for n in o])
+            output_cmd_list.append(temp)
+        output_cmd = ' '.join(output_cmd_list)
+        print output_cmd
+
+        print complex_filter_cmd
+
+    def _set_all_node_stream_in_num(self, all_outputs):
+        for o in all_outputs:
+            o.set_stream_in_num()
+            for n in o.traverse_inputs():
+                n.set_stream_in_num()
+
+    def _ensure_all_nodes_are_connected(self, all_outputs):
+        for o in all_outputs:
+            for n in o.traverse_inputs():
+                if n.validate() is False:
+                    from dayu_ffmpeg.errors.base import DayuFFmpegException
+                    raise DayuFFmpegException('{} has unconnected input')
+
+    def _find_all_bound(self, all_complex_filters, all_outputs):
+        all_bound_node = []
+        for o in all_outputs:
+            previous = o
+            for n in o.traverse_inputs():
+                if n in all_complex_filters and previous not in all_complex_filters and n.visited:
+                    all_bound_node.append([previous] + list(previous.traverse_outputs()))
+                    break
+                previous = n
+        return all_bound_node
+
+    def _find_all_complex_filters(self):
+        cf_group = next((n for n in self.inside_nodes if isinstance(n, ComplexFilterGroup)), None)
+        if not cf_group:
+            from dayu_ffmpeg.errors.base import DayuFFmpegException
+            raise DayuFFmpegException('root should have one and only one complex filter group!')
+        all_complex_filters = list(cf_group.traverse_children())
+        return all_complex_filters
+
+    def _find_all_inputs(self, all_outputs):
+        from dayu_ffmpeg.network import Input
+        all_inputs = []
+        for o in all_outputs:
+            for n in o.traverse_inputs():
+                n.set_stream_out_num()
+                n.visited = True
+                if isinstance(n, Input):
+                    n.stream_out_num = len(all_inputs)
+                    all_inputs.append(n)
+
+        return all_inputs
+
+    def _find_all_outputs(self):
+        from dayu_ffmpeg.network import Output
+        all_outputs = [n for n in self.inside_nodes if isinstance(n, Output)]
+        if not all_outputs:
+            from dayu_ffmpeg.errors.base import DayuFFmpegException
+            raise DayuFFmpegException('there is no output node, cannot generate cmd!'
+                                      'please attach some output node')
+        return all_outputs

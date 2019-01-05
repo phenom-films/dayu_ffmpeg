@@ -33,6 +33,7 @@ class AbstractEdge(object):
         self.parent = None
         self.output_group_index = kwargs.get('output_group_index', None)
 
+
     def delete(self):
         raise NotImplementedError()
 
@@ -61,7 +62,7 @@ class DirectEdge(AbstractEdge):
             self.endpoints.left.parent.inside_edges.remove(self)
         if self.endpoints.right.parent is not None:
             self.endpoints.right.parent.inside_edges.remove(self)
-
+        self.output_group_index = None
         self.endpoints = TwoEndPoints()
 
     def connect(self, left, right):
