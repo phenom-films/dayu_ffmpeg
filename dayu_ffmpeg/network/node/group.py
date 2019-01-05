@@ -71,6 +71,12 @@ class BaseGroupNode(BaseNode):
                 if isinstance(current, BaseGroupNode):
                     queue.extendleft(current.inside_nodes[::-1])
 
+    def to_script(self):
+        result = super(BaseGroupNode, self).to_script()
+        result['inside_nodes'] = self.inside_nodes.to_script()
+        result['inside_edges'] = self.inside_edges.to_script()
+        return result
+
 
 class Group(BaseGroupNode):
     type = 'group'
@@ -83,15 +89,8 @@ class ComplexFilterGroup(Group):
 class RootNode(Group):
     type = 'root'
 
-    def __setattr__(self, key, value):
-        if key == 'parent' and key in self.__dict__:
-            raise AttributeError('root node can\'t set parent!')
-        else:
-            super(RootNode, self).__setattr__(key, value)
-
     def cmd(self):
         from globals import FFMPEG, Overwrite
-        from holder import AbstractHolder
         self.reset_visited()
         all_outputs = self._find_all_outputs()
         self._ensure_all_nodes_are_connected(all_outputs)
@@ -99,25 +98,37 @@ class RootNode(Group):
         all_complex_filters = [n for n in self._find_all_complex_filters() if n.visited]
         all_bound_nodes = self._find_all_bound(all_complex_filters, all_outputs)
         self._set_all_node_stream_in_num(all_outputs)
-
-
         all_global_nodes = [FFMPEG(), Overwrite()]
 
-        global_cmd = ' '.join([n.complex_cmd_string() for n in all_global_nodes])
-        input_cmd = ' '.join([n.complex_cmd_string() for n in all_inputs])
-        print input_cmd
-        useful_filters = [n for n in all_complex_filters if not isinstance(n, AbstractHolder)]
-        complex_filter_cmd = '-filter_complex \"{cmd}\"'.format(
-                cmd=';'.join([n.complex_cmd_string() for n in useful_filters]))
+        global_cmd = self._generate_global_cmd(all_global_nodes)
+        input_cmd = self._generate_input_cmd(all_inputs)
+        complex_filter_cmd = self._generate_complex_filter_cmd(all_complex_filters)
+        output_cmd = self._generate_output_cmd(all_bound_nodes)
+
+        return ' '.join([global_cmd, input_cmd, complex_filter_cmd, output_cmd])
+
+    def _generate_output_cmd(self, all_bound_nodes):
         output_cmd_list = []
         for o in all_bound_nodes:
             temp = '-map {stream} '.format(stream=''.join(['[{}]'.format(x) for x in o[0].stream_in_num]))
             temp += ' '.join([n.complex_cmd_string() for n in o])
             output_cmd_list.append(temp)
         output_cmd = ' '.join(output_cmd_list)
-        print output_cmd
+        return output_cmd
 
-        print complex_filter_cmd
+    def _generate_complex_filter_cmd(self, all_complex_filters):
+        from holder import AbstractHolder
+        useful_filters = [n for n in all_complex_filters if not isinstance(n, AbstractHolder)]
+        complex_filter_cmd = '-filter_complex \"{cmd}\"'.format(
+                cmd=';'.join([n.complex_cmd_string() for n in useful_filters]))
+        return complex_filter_cmd
+
+    def _generate_input_cmd(self, all_inputs):
+        return ' '.join([n.complex_cmd_string() for n in all_inputs])
+
+    def _generate_global_cmd(self, all_global_nodes):
+        global_cmd = ' '.join([n.complex_cmd_string() for n in all_global_nodes])
+        return global_cmd
 
     def _set_all_node_stream_in_num(self, all_outputs):
         for o in all_outputs:
