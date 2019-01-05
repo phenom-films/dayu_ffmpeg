@@ -19,6 +19,12 @@ class TwoEndPoints(object):
             raise AttributeError('TwoEndPoint can\'t be set new value')
         super(TwoEndPoints, self).__setattr__(key, value)
 
+    def to_script(self):
+        result = {}
+        result['left'] = self.left.id if self.left else None
+        result['right'] = self.right.id if self.right else None
+        return result
+
 
 class AbstractEdge(object):
     type = 'abstract_edge'
@@ -33,11 +39,17 @@ class AbstractEdge(object):
         self.parent = None
         self.output_group_index = kwargs.get('output_group_index', None)
 
-
     def delete(self):
         raise NotImplementedError()
 
     def connect(self, left, right):
+        raise NotImplementedError()
+
+    def to_script(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def from_script(cls, object):
         raise NotImplementedError()
 
 
@@ -51,7 +63,6 @@ class DirectEdge(AbstractEdge):
             left.parent.inside_edges.append(self)
         if left.parent is not None:
             right.parent.inside_edges.append(self)
-
 
     def delete(self):
         self.endpoints.left.out_edges[self.output_group_index].remove(self)
@@ -67,3 +78,21 @@ class DirectEdge(AbstractEdge):
 
     def connect(self, left, right):
         pass
+
+    def to_script(self):
+        result = {}
+        result['id'] = self.id
+        result['type'] = self.type
+        result['name'] = self.name
+        result['label'] = self.label
+        result['selected'] = self.selected
+        result['endpoints'] = self.endpoints.to_script()
+        result['parent'] = self.parent.id if self.parent else None
+        result['output_group_index'] = self.output_group_index
+        return result
+
+    @classmethod
+    def from_script(cls, object):
+        instance = cls()
+        instance.__dict__.update(object)
+        return instance
