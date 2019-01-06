@@ -8,6 +8,25 @@ from dayu_ffmpeg.network import *
 
 
 class TestInputHolder(object):
+    def prepare_network(self):
+        self.i1 = Input()
+        self.root = RootNode()
+        self.ih1 = self.root.create_node(InputHolder)
+        self.root.set_input(self.i1)
+        self.i2 = self.root.create_node(Input)
+        self.cf = self.root.create_node(ComplexFilterGroup)
+        self.ih2 = self.cf.create_node(InputHolder)
+        self.ih3 = self.cf.create_node(InputHolder)
+        self.cf.set_input(self.ih1, 0)
+        self.cf.set_input(self.i2, 1)
+        self.over = self.cf.create_node(Overlay)
+        self.over.set_input(self.ih2, 0)
+        self.over.set_input(self.ih3, 1)
+        self.oh1 = self.cf.create_node(OutputHolder)
+        self.oh1.set_input(self.over)
+        self.o1 = self.root.create_node(Output)
+        self.o1.set_input(self.cf)
+
     def test_in_edges(self):
         pass
 
@@ -45,6 +64,12 @@ class TestInputHolder(object):
         ib.delete()
         assert g.max_input_num == 0 and len(g.in_edges) == 0
         assert ib not in g.inside_nodes
+
+
+    def test_origin(self):
+        self.prepare_network()
+        assert self.ih1.origin() == self.i1
+        assert self.oh1.origin() == self.over
 
 if __name__ == '__main__':
     TestInputHolder().test_delete()

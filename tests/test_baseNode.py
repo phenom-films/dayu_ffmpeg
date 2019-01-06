@@ -4,11 +4,14 @@
 __author__ = 'andyguo'
 
 import pytest
-from dayu_ffmpeg.network.node.base import BaseNode
-from dayu_ffmpeg.network.node.group import Group
+from dayu_ffmpeg.network import *
 
 
 class TestBaseNode(object):
+    def test__init__(self):
+        a = BaseNode(name='haha')
+        assert a.name == 'haha'
+
     def test_check_allow_connect(self):
         a = BaseNode()
         b = BaseNode()
@@ -112,3 +115,53 @@ class TestBaseNode(object):
 
         b.set_input(None)
         assert a.connected_outputs() == [c]
+
+    def test_traverse_inputs(self):
+        a = BaseNode()
+        b = BaseNode()
+        g = Group()
+        ia1 = g.create_node(InputHolder)
+        ib = g.create_node(BaseNode)
+        ic = g.create_node(OutputHolder)
+        c = BaseNode()
+
+        c.set_input(g)
+        ic.set_input(ib)
+        ib.set_input(ia1)
+        g.set_input(b)
+        b.set_input(a)
+
+        assert list(c.traverse_inputs()) == [ic, ib, ia1, b, a]
+        assert list(c.traverse_inputs(False)) == [g, b, a]
+
+    def test_travse_outputs(self):
+        a = BaseNode(name='a')
+        g1 = Group(name='g1')
+        g2 = Group(name='g2')
+        ia1 = g1.create_node(InputHolder, name='ia1')
+        ib1 = g1.create_node(OutputHolder, name='ib1')
+        ia2 = g2.create_node(InputHolder, name='ia2')
+        ib2 = g2.create_node(OutputHolder, name='ib2')
+        c = BaseNode(name='c')
+        d = BaseNode(name='d')
+
+        c.set_input(g1)
+        ib1.set_input(ia1)
+        g1.set_input(a)
+        d.set_input(g2)
+        ib2.set_input(ia2)
+        g2.set_input(a)
+
+        assert list(a.traverse_outputs()) == [ia1, ib1, c, ia2, ib2, d]
+        assert list(a.traverse_outputs(False)) == [g1, c, g2, d]
+
+    def test_hierarchy(self):
+        root = RootNode()
+        a = root.create_node(Group)
+        b = a.create_node(Group)
+        c = b.create_node(BaseNode)
+
+        assert c.hierarchy() == [b, a, root]
+        assert b.hierarchy() == [a, root]
+        assert a.hierarchy() == [root]
+        assert root.hierarchy() == []
