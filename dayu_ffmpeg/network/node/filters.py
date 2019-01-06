@@ -33,6 +33,16 @@ class Scale(BaseFilterNode):
         self.relative_scale = relative_scale
         super(Scale, self).__init__(**kwargs)
 
+    def simple_cmd_string(self):
+        if self.relative_scale:
+            self._cmd = u'scale=w=iw*{scale_x}:h=ih*{scale_y}'.format(scale_x=self.width,
+                                                                      scale_y=self.height)
+            return self._cmd
+        else:
+            self._cmd = u'scale=w={width}:h=i{height}'.format(width=self.width,
+                                                              height=self.height)
+            return self._cmd
+
 
 class Overlay(BaseFilterNode):
     type = 'overlay'
@@ -42,3 +52,7 @@ class Overlay(BaseFilterNode):
         self.x = x
         self.y = y
         super(Overlay, self).__init__(**kwargs)
+
+    def simple_cmd_string(self):
+        self._cmd = u'overlay=x={x}:y={y}'.format(x=self.x, y=self.y)
+        return self._cmd
