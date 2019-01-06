@@ -57,6 +57,7 @@ class AbstractNode(object):
         self.selected = False
         self.metadata = {}
         self.parent = kwargs.get('parent', None)
+        self.knobs = UniqueList()
 
     def set_input(self, node, index=None):
         raise NotImplementedError()
@@ -261,7 +262,7 @@ class BaseNode(AbstractNode):
         return self
 
     def set_stream_in_num(self):
-        from group import BaseGroupNode
+        from dayu_ffmpeg.network import BaseGroupNode
         self.stream_in_num = []
         if self.max_input_num > 0 and self.connected_in_edges():
             for e in self.connected_in_edges():
@@ -294,12 +295,24 @@ class BaseNode(AbstractNode):
         result['pos_y'] = self.pos_y
         result['selected'] = self.selected
         result['parent'] = self.parent.id if self.parent else None
-        result['in_edges'] = [e.to_script() for e in self.in_edges]
+        result['in_edges'] = [e.to_script() if e else None for e in self.in_edges]
         result['out_edges'] = [g.to_script() for g in self.out_edges]
+        result['knobs'] = [k.to_script() for k in self.knobs]
         return result
 
     @classmethod
     def from_script(cls, object):
+        from dayu_ffmpeg.ffscript import parse_ffscript_data
         instance = cls()
         instance.__dict__.update(object)
+        instance.parent = parse_ffscript_data(instance.parent)
+        instance.in_edges = UniqueList([parse_ffscript_data(e) for e in instance.in_edges])
+        instance.out_edges = [UniqueList([parse_ffscript_data(e) for e in g]) for g in instance.out_edges]
+        instance.knobs = UniqueList([parse_ffscript_data(k) for k in instance.knobs])
         return instance
+
+    def add_knob(self, knob):
+        if knob:
+            knob.parent = self
+            self.knobs.append(knob)
+        return knob
