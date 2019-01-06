@@ -30,6 +30,27 @@ class Input(BaseIONode):
         self.sequence = False if filename.endswith(SINGLE_MEDIA_FORMAT) else True
         super(Input, self).__init__(**kwargs)
 
+    def simple_cmd_string(self):
+        if self.sequence:
+            self._cmd = u'{start}-f image2 ' \
+                        u'{fps}{trimin}' \
+                        u'-i \"{filename}\"' \
+                        u''.format(start='-start_number {} '.format(self.start) if self.start else '',
+                                   fps='-r {} '.format(self.fps) if self.fps else '',
+                                   trimin='-ss {:.02f} '.format(
+                                           self.trim_in_frame / float(
+                                                   self.fps if self.fps else 24.0)) if self.trim_out_frame else '',
+                                   filename=self.filename)
+        else:
+            self._cmd = u'{fps}{trimin}' \
+                        u'-i \"{filename}\"' \
+                        u''.format(fps='-r {} '.format(self.fps) if self.fps else '',
+                                   trimin='-ss {:.02f} '.format(
+                                           self.trim_in_frame / float(
+                                                   self.fps if self.fps else 24.0)) if self.trim_out_frame else '',
+                                   filename=self.filename)
+        return self._cmd
+
 
 class Output(BaseIONode):
     type = 'output'
@@ -42,6 +63,16 @@ class Output(BaseIONode):
         self.sequence = sequence
         self.duration = duration
         super(Output, self).__init__(**kwargs)
+
+    def simple_cmd_string(self):
+        self._cmd = u'{duration}' \
+                    u'-r {fps} {start}\"{filename}\"'.format(filename=self.filename,
+                                                             fps=self.fps,
+                                                             start='-start_number {} '.format(
+                                                                     self.start) if self.sequence else '',
+                                                             duration='-t {} '.format(
+                                                                     self.duration) if self.duration else '')
+        return self._cmd
 
     def cmd(self):
         self._ensure_ad_hoc()
