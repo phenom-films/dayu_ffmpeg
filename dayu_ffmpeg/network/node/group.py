@@ -47,13 +47,17 @@ class BaseGroupNode(BaseNode):
         return [n for n in self.inside_nodes if isinstance(n, InputHolder)]
 
     def create_node(self, node_class, **kwargs):
-        if issubclass(node_class, AbstractNode):
+        if isinstance(node_class, AbstractNode):
+            node = node_class
+            node_class.parent = self
+        elif issubclass(node_class, AbstractNode):
             kwargs.update(parent=self)
             node = node_class(**kwargs)
-            self.refresh_inputholder(node)
-            self.refresh_outputholder(node)
-            self.inside_nodes.append(node)
-            return node
+
+        self.refresh_inputholder(node)
+        self.refresh_outputholder(node)
+        self.inside_nodes.append(node)
+        return node
 
     def reset_visited(self):
         for n in self.inside_nodes:
@@ -76,6 +80,14 @@ class BaseGroupNode(BaseNode):
         result['inside_nodes'] = self.inside_nodes.to_script()
         result['inside_edges'] = self.inside_edges.to_script()
         return result
+
+    @classmethod
+    def from_script(cls, object):
+        from dayu_ffmpeg.ffscript import parse_ffscript_data
+        instance = super(BaseGroupNode, cls).from_script(object)
+        instance.inside_nodes = UniqueList([parse_ffscript_data(n) for n in instance.inside_nodes])
+        instance.inside_edges = UniqueList([parse_ffscript_data(n) for n in instance.inside_edges])
+        return instance
 
 
 class Group(BaseGroupNode):
@@ -141,7 +153,7 @@ class RootNode(Group):
             for n in o.traverse_inputs():
                 if n.validate() is False:
                     from dayu_ffmpeg.errors.base import DayuFFmpegException
-                    raise DayuFFmpegException('{} has unconnected input')
+                    raise DayuFFmpegException('{} has unconnected input'.format(n))
 
     def _find_all_bound(self, all_complex_filters, all_outputs):
         all_bound_node = []
