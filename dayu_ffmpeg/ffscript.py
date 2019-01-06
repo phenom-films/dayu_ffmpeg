@@ -3,10 +3,9 @@
 
 __author__ = 'andyguo'
 
-from network import AbstractNode, AbstractEdge
-
 
 def get_all_subclasses():
+    from dayu_ffmpeg.network import AbstractNode, AbstractEdge, AbstractKnob
     from collections import deque
     queue = deque()
     result = {}
@@ -16,6 +15,11 @@ def get_all_subclasses():
         result[current.type] = current
         queue.extend(current.__subclasses__())
     queue.append(AbstractEdge)
+    while queue:
+        current = queue.popleft()
+        result[current.type] = current
+        queue.extend(current.__subclasses__())
+    queue.append(AbstractKnob)
     while queue:
         current = queue.popleft()
         result[current.type] = current
@@ -32,13 +36,51 @@ def save_script(root_node, ffscript_path):
         json.dump(root_node.to_script(), f, encoding='utf-8', indent=4)
 
 
-def _parse_ffscript_data(object):
-    if object is None:
-        return object
+def parse_ffscript_data(object):
+    if isinstance(object, dict):
+        class_type = ALL_SUBCLASSES.get(object['type'], None)
+        instance = class_type.from_script(object)
+        return instance
 
-    class_type = ALL_SUBCLASSES.get(object['type'], None)
-    instance = class_type.from_script(object)
-    return instance
+    return object
+
+
+def relink_nodes(node, parent=None):
+    from dayu_ffmpeg.network import BaseGroupNode
+    node.parent = parent
+    if isinstance(node, BaseGroupNode):
+        for n in node.inside_nodes:
+            relink_nodes(n, node)
+
+
+def relink_edges(node, parent=None):
+    from dayu_ffmpeg.network import BaseGroupNode, TwoEndPoints
+
+    lookup_node = {n.id: n for n in parent.inside_nodes} if parent else {}
+    for i, e in enumerate(node.in_edges):
+        if e:
+            left = lookup_node.get(e.endpoints.left, None)
+            right = lookup_node.get(e.endpoints.right, None)
+            if left and right:
+                node.in_edges[i].endpoints = TwoEndPoints(left, right)
+            else:
+                node.in_edges[i] = None
+
+    if isinstance(node, BaseGroupNode):
+        for n in node.inside_nodes:
+            relink_edges(n, node)
+
+
+def relink_knobs(node, all_nodes=None):
+    if all_nodes is None:
+        all_nodes = {n.id: n for n in node.traverse_children(recursive=True)}
+        all_nodes[node.id] = node
+
+    for n in all_nodes.values():
+        for k in n.knobs:
+            if k:
+                k.parent = all_nodes.get(k.parent, None)
+                k.link = all_nodes.get(k.link, None)
 
 
 def open_script(ffscipt_path):
@@ -47,37 +89,9 @@ def open_script(ffscipt_path):
     with open(ffscipt_path, 'r') as f:
         data = json.load(f)
 
-    root = _parse_ffscript_data(data)
+    root = parse_ffscript_data(data)
+    relink_nodes(root, None)
+    relink_edges(root, None)
+    relink_knobs(root)
+
     return root
-
-
-if __name__ == '__main__':
-    from network import *
-
-    i1 = Input()
-    root = RootNode()
-    ih1 = root.create_node(InputHolder)
-    root.set_input(i1)
-    i2 = root.create_node(Input)
-    cf = root.create_node(ComplexFilterGroup)
-    ih2 = cf.create_node(InputHolder)
-    ih3 = cf.create_node(InputHolder)
-    cf.set_input(ih1, 0)
-    cf.set_input(i2, 1)
-    over = cf.create_node(Overlay)
-    over.set_input(ih2, 0)
-    over.set_input(ih3, 1)
-    oh1 = cf.create_node(OutputHolder)
-    oh1.set_input(over)
-    o1 = root.create_node(Output)
-    o1.set_input(cf)
-
-    from pprint import pprint
-
-    # pprint(ALL_SUBCLASSES)
-    root = open_script('/Users/andyguo/Desktop/basic.txt')
-    pprint(root.__dict__)
-    print root.id
-
-    # pprint(root.to_script())
-    # save_script(root, '/Users/andyguo/Desktop/basic.txt')
