@@ -52,6 +52,10 @@ class AbstractEdge(object):
     def from_script(cls, object):
         raise NotImplementedError()
 
+    def __str__(self):
+        return '<{}>(name={}, left={}, right={})'.format(self.type, self.name, self.endpoints.left,
+                                                         self.endpoints.right)
+
 
 class DirectEdge(AbstractEdge):
     type = 'direct_edge'
@@ -59,9 +63,9 @@ class DirectEdge(AbstractEdge):
     def __init__(self, left=None, right=None, **kwargs):
         super(DirectEdge, self).__init__(**kwargs)
         self.endpoints = TwoEndPoints(left, right)
-        if left.parent is not None:
+        if getattr(left, 'parent', None):
             left.parent.inside_edges.append(self)
-        if left.parent is not None:
+        if getattr(right, 'parent', None):
             right.parent.inside_edges.append(self)
 
     def delete(self):
@@ -80,7 +84,8 @@ class DirectEdge(AbstractEdge):
         pass
 
     def to_script(self):
-        result = {}
+        from copy import deepcopy
+        result = deepcopy(self.__dict__)
         result['id'] = self.id
         result['type'] = self.type
         result['name'] = self.name
@@ -93,6 +98,9 @@ class DirectEdge(AbstractEdge):
 
     @classmethod
     def from_script(cls, object):
+        from dayu_ffmpeg.ffscript import parse_ffscript_data
         instance = cls()
         instance.__dict__.update(object)
+        instance.parent = parse_ffscript_data(instance.parent)
+        instance.endpoints = TwoEndPoints(instance.endpoints['left'], instance.endpoints['right'])
         return instance
