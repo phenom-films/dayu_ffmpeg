@@ -101,6 +101,33 @@ class ComplexFilterGroup(Group):
 class RootNode(Group):
     type = 'root'
 
+    def __init__(self, *args, **kwargs):
+        super(RootNode, self).__init__(*args, **kwargs)
+        self.prepare()
+
+    def prepare(self):
+        pass
+
+    def __call__(self, input_list=None, output_list=None):
+        from dayu_ffmpeg.errors.base import DayuFFmpegException
+        if self.max_input_num == 0 and self.max_output_num == 0:
+            raise DayuFFmpegException('this Root node has no inputholder and outputholder, '
+                                      'maybe it is a self-contain network, '
+                                      'use .run() instead.')
+
+        if len(input_list) < self.max_input_num or len(output_list) < self.max_output_num:
+            raise DayuFFmpegException('this Root node has {} inputs and {} outputs, '
+                                      'but only provide {} inputs and {} outputs'.format(self.max_input_num,
+                                                                                         self.max_output_num,
+                                                                                         len(input_list),
+                                                                                         len(output_list)))
+        for index in range(self.max_input_num):
+            self.set_input(input_list[index])
+        for index in range(self.max_output_num):
+            output_list[index].set_input(self, output_index=index)
+
+        return self
+
     def cmd(self):
         from globals import FFMPEG, Overwrite
         self.reset_visited()
@@ -188,12 +215,25 @@ class RootNode(Group):
         return all_inputs
 
     def _find_all_outputs(self):
-        from dayu_ffmpeg.network import Output
-        all_outputs = [n for n in self.inside_nodes if isinstance(n, Output)]
-        if not all_outputs:
-            from dayu_ffmpeg.errors.base import DayuFFmpegException
-            raise DayuFFmpegException('there is no output node, cannot generate cmd!'
-                                      'please attach some output node')
+        from dayu_ffmpeg.network import Output, OutputHolder
+        from dayu_ffmpeg.errors.base import DayuFFmpegException
+        if self.max_output_num == 0:
+            all_outputs = [n for n in self.inside_nodes if isinstance(n, Output)]
+            if not all_outputs:
+                raise DayuFFmpegException('there is no output node, cannot generate cmd! '
+                                          'please attach some output node')
+        else:
+            all_outputs = []
+            for n in self.inside_nodes:
+                if isinstance(n, Output):
+                    all_outputs.append(n)
+                if isinstance(n, OutputHolder):
+                    out = next((o for o in n.traverse_outputs() if isinstance(o, Output)), None)
+                    if not out:
+                        raise DayuFFmpegException('an OutputHolder not connect to a Output node, '
+                                                  'please make sure every OutputHolder is connected.')
+                    all_outputs.append(out)
+
         return all_outputs
 
     def run(self):
