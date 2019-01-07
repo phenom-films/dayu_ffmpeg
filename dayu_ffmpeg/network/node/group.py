@@ -171,7 +171,7 @@ class RootNode(Group):
         if not cf_group:
             from dayu_ffmpeg.errors.base import DayuFFmpegException
             raise DayuFFmpegException('root should have one and only one complex filter group!')
-        all_complex_filters = list(cf_group.traverse_children())
+        all_complex_filters = list(cf_group.traverse_children(recursive=True))
         return all_complex_filters
 
     def _find_all_inputs(self, all_outputs):
