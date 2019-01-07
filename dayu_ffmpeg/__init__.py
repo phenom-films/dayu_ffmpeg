@@ -2,6 +2,6 @@
 # -*- encoding: utf-8 -*-
 
 __author__ = 'andyguo'
-__version__ = 0.4
+__version__ = 0.5
 
-from .stream import *
+from network import *
