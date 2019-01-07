@@ -195,3 +195,44 @@ class RootNode(Group):
             raise DayuFFmpegException('there is no output node, cannot generate cmd!'
                                       'please attach some output node')
         return all_outputs
+
+    def run(self):
+        import subprocess
+        import re
+        import time
+
+        self.progress = {'render_frame': None, 'render_fps': None, 'render_speed': None, 'elapse_time': None}
+        frame_regex = re.compile(r'^frame=\s*?(\d+)')
+        fps_regex = re.compile(r'.*?fps=\s*?(\d+)')
+        time_regex = re.compile(r'.*?time=\s*?(.*?)\s')
+        speed_regex = re.compile(r'.*?speed=\s*?(.*?)x')
+
+        start_time = time.time()
+        _cmd = self.cmd()
+        print _cmd
+        shell_cmd = subprocess.Popen(_cmd,
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     universal_newlines=True)
+
+        while True:
+            if shell_cmd.poll() is not None:
+                break
+
+            message = shell_cmd.stderr.readline()
+            self.progress['elapse_time'] = round(time.time() - start_time, 2)
+
+            frame_match = frame_regex.match(message)
+            fps_match = fps_regex.match(message)
+            time_match = time_regex.match(message)
+            speed_match = speed_regex.match(message)
+            if frame_match and fps_match and time_regex and speed_regex:
+                self.progress['render_frame'] = float(frame_match.group(1))
+                self.progress['render_fps'] = float(fps_match.group(1))
+                self.progress['render_speed'] = float(speed_match.group(1))
+                yield self.progress
+
+        if shell_cmd.returncode != 0:
+            from dayu_ffmpeg.errors.base import DayuFFmpegException
+            raise DayuFFmpegException('transcode failed: {}'.format(shell_cmd.stderr.readlines()))
