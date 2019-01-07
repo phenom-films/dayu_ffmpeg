@@ -38,9 +38,10 @@ def save_script(root_node, ffscript_path):
 
 def parse_ffscript_data(object):
     if isinstance(object, dict):
-        class_type = ALL_SUBCLASSES.get(object['type'], None)
-        instance = class_type.from_script(object)
-        return instance
+        class_type = ALL_SUBCLASSES.get(object.get('type', None), None)
+        if class_type:
+            instance = class_type.from_script(object)
+            return instance
 
     return object
 
