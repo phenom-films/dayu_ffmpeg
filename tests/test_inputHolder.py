@@ -71,5 +71,4 @@ class TestInputHolder(object):
         assert self.ih1.origin() == self.i1
         assert self.oh1.origin() == self.over
 
-if __name__ == '__main__':
-    TestInputHolder().test_delete()
+
