@@ -10,6 +10,12 @@ from uuid import uuid4
 class AbstractHolder(BaseNode):
     type = 'abstract_holder'
 
+    def simple_cmd_string(self):
+        return ''
+
+    def complex_cmd_string(self):
+        return self.simple_cmd_string()
+
 
 class InputHolder(AbstractHolder):
     type = 'input_holder'
