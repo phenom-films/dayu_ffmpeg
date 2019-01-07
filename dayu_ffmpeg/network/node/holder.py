@@ -68,7 +68,7 @@ class InputHolder(AbstractHolder):
                         e.delete()
             if self.parent is not None:
                 self.parent.inside_nodes.remove(self)
-            self.parent.in_edges = UniqueList(self.parent.in_edges[:index] + self.parent.in_edges[index + 1:])
+            del self.parent.in_edges[index]
             self.parent = None
             self.link_num = None
 
@@ -148,7 +148,7 @@ class OutputHolder(AbstractHolder):
                     if e:
                         e.delete()
             self.parent.inside_nodes.remove(self)
-            self.parent.out_edges = self.parent.out_edges[:index] + self.parent.out_edges[index + 1:]
+            del self.parent.out_edges[index]
             self.parent = None
             self.link_num = None
 
