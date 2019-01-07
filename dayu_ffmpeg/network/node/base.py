@@ -75,6 +75,9 @@ class AbstractNode(object):
     def from_script(cls, object):
         raise NotImplementedError()
 
+    def help(self):
+        raise NotImplementedError()
+
 
 class BaseNode(AbstractNode):
     type = 'base_node'
@@ -108,6 +111,9 @@ class BaseNode(AbstractNode):
 
         other.set_input(self)
         return other
+
+    def help(self):
+        return 'some helpful tips'
 
     def check_allow_connect(self, node, input_index, output_index):
         if self is node:
