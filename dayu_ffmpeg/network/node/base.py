@@ -262,14 +262,18 @@ class BaseNode(AbstractNode):
         return self
 
     def set_stream_in_num(self):
+        def go_inside_group(node):
+            if isinstance(node, BaseGroupNode):
+                node = node.outputholders[e.output_group_index]
+                node = go_inside_group(node.origin())
+            return node
+
         from dayu_ffmpeg.network import BaseGroupNode
         self.stream_in_num = []
         if self.max_input_num > 0 and self.connected_in_edges():
             for e in self.connected_in_edges():
-                n = e.endpoints.left
-                if isinstance(n, BaseGroupNode):
-                    n = n.outputholders[e.output_group_index]
-                self.stream_in_num.append(n.origin().stream_out_num)
+                n = go_inside_group(e.endpoints.left.origin())
+                self.stream_in_num.append(n.stream_out_num)
 
     def set_stream_out_num(self):
         self.stream_out_num = self.origin().id
