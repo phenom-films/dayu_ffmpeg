@@ -4,10 +4,12 @@
 __author__ = 'andyguo'
 
 from base import BaseNode
+from dayu_ffmpeg.config import GLOBAL_ORDER_SCORE
 
 
 class BaseGlobalNode(BaseNode):
     type = 'base_global_node'
+    order_score = GLOBAL_ORDER_SCORE
 
     def simple_cmd_string(self):
         return self._cmd

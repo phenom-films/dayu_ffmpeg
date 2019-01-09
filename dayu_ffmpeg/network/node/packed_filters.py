@@ -6,10 +6,12 @@ __author__ = 'andyguo'
 from group import Group
 from filters import *
 from holder import InputHolder, OutputHolder
+from dayu_ffmpeg.config import FILTER_ORDER_SCORE
 
 
 class BasePackedFilterNode(Group):
     type = 'base_packed_filter_node'
+    order_score = FILTER_ORDER_SCORE
 
     def __init__(self, *args, **kwargs):
         super(BasePackedFilterNode, self).__init__(*args, **kwargs)

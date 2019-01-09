@@ -40,11 +40,15 @@ class UniqueList(list):
     def to_script(self):
         return [x.to_script() if x else None for x in self]
 
+    def get(self, name):
+        return next((x for x in self if getattr(x, 'name') == name), None)
+
 
 class AbstractNode(object):
     type = 'abstract_node'
     max_input_num = 1
     max_output_num = 1
+    order_score = None
 
     def __init__(self, *args, **kwargs):
         self.id = kwargs.get('id', uuid4().hex)
@@ -83,6 +87,7 @@ class BaseNode(AbstractNode):
     type = 'base_node'
     max_input_num = 1
     max_output_num = 1
+    order_score = 1
 
     def __init__(self, *args, **kwargs):
         super(BaseNode, self).__init__(*args, **kwargs)
@@ -100,6 +105,8 @@ class BaseNode(AbstractNode):
         from dayu_ffmpeg.errors.base import DayuFFmpegException
         if not isinstance(other, BaseNode):
             raise DayuFFmpegException('{} not a BaseNode!'.format(other))
+        if other.order_score < self.order_score and other.order_score != 0:
+            raise DayuFFmpegException('{} should be on the left of {}, order error'.format(other, self))
         if isinstance(other, (AbstractHolder, BaseGroupNode)):
             raise DayuFFmpegException('{} not support in ad-hoc mode, use complex mode instead!'.format(other))
         if self.max_output_num != 1:

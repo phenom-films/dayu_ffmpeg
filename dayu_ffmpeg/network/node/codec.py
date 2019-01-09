@@ -4,10 +4,11 @@
 __author__ = 'andyguo'
 
 from base import BaseNode
-
+from dayu_ffmpeg.config import CODEC_ORDER_SCORE
 
 class BaseCodecNode(BaseNode):
     type = 'base_code_node'
+    order_score = CODEC_ORDER_SCORE
 
     def simple_cmd_string(self):
         return self.type

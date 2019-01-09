@@ -4,12 +4,14 @@
 __author__ = 'andyguo'
 
 from base import AbstractNode, BaseNode, UniqueList
+from dayu_ffmpeg.config import GROUP_ORDER_SCORE, FILTER_ORDER_SCORE
 
 
 class BaseGroupNode(BaseNode):
     type = 'base_group_node'
     max_input_num = 0
     max_output_num = 0
+    order_score = GROUP_ORDER_SCORE
 
     def __init__(self, *args, **kwargs):
         super(BaseGroupNode, self).__init__(*args, **kwargs)
@@ -96,6 +98,7 @@ class Group(BaseGroupNode):
 
 class ComplexFilterGroup(Group):
     type = 'filter_complex'
+    order_score = FILTER_ORDER_SCORE
 
 
 class RootNode(Group):
@@ -112,7 +115,7 @@ class RootNode(Group):
         from dayu_ffmpeg.errors.base import DayuFFmpegException
         if self.max_input_num == 0 and self.max_output_num == 0:
             raise DayuFFmpegException('this Root node has no inputholder and outputholder, '
-                                      'maybe it is a self-contain network, '
+                                      'maybe be a self-contain network, '
                                       'use .run() instead.')
 
         if len(input_list) < self.max_input_num or len(output_list) < self.max_output_num:

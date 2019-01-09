@@ -4,11 +4,12 @@
 __author__ = 'andyguo'
 
 from base import BaseNode
-from dayu_ffmpeg.config import SINGLE_MEDIA_FORMAT
+from dayu_ffmpeg.config import SINGLE_MEDIA_FORMAT, INPUT_ORDER_SCORE, OUTPUT_ORDER_SCORE
 
 
 class BaseIONode(BaseNode):
     type = 'base_io_node'
+    order_score = -1
 
     def simple_cmd_string(self):
         return self.type
@@ -20,6 +21,7 @@ class BaseIONode(BaseNode):
 class Input(BaseIONode):
     type = 'input'
     max_input_num = 0
+    order_score = INPUT_ORDER_SCORE
 
     def __init__(self, filename='', start=None, trim_in_frame=None, trim_out_frame=None, fps=None, **kwargs):
         self.filename = filename
@@ -55,6 +57,7 @@ class Input(BaseIONode):
 class Output(BaseIONode):
     type = 'output'
     max_output_num = 0
+    order_score = OUTPUT_ORDER_SCORE
 
     def __init__(self, filename='', fps=24, start=1001, sequence=False, duration=None, **kwargs):
         self.filename = filename

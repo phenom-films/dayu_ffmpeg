@@ -4,10 +4,12 @@
 __author__ = 'andyguo'
 
 from base import BaseNode
+from dayu_ffmpeg.config import FILTER_ORDER_SCORE
 
 
 class BaseFilterNode(BaseNode):
     type = 'base_filter_node'
+    order_score = FILTER_ORDER_SCORE
 
     def __init__(self, *args, **kwargs):
         self.stream_in_num = []

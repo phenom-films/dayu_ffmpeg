@@ -5,10 +5,11 @@ __author__ = 'andyguo'
 
 from base import BaseNode, UniqueList
 from uuid import uuid4
-
+from dayu_ffmpeg.config import INPUT_HOLDER_ORDER_SCORE, OUTPUT_HOLDER_ORDER_SCORE
 
 class AbstractHolder(BaseNode):
     type = 'abstract_holder'
+    order_score = -1
 
     def simple_cmd_string(self):
         return ''
@@ -20,6 +21,7 @@ class AbstractHolder(BaseNode):
 class InputHolder(AbstractHolder):
     type = 'input_holder'
     max_input_num = 0
+    order_score = INPUT_HOLDER_ORDER_SCORE
 
     def __init__(self, *args, **kwargs):
         self.id = kwargs.get('id', uuid4().hex)
@@ -112,6 +114,7 @@ class InputHolder(AbstractHolder):
 class OutputHolder(AbstractHolder):
     type = 'output_holder'
     max_output_num = 0
+    order_score = OUTPUT_HOLDER_ORDER_SCORE
 
     def __init__(self, *args, **kwargs):
         self.id = kwargs.get('id', uuid4().hex)
