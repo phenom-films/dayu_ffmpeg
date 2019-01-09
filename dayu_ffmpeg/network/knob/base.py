@@ -41,7 +41,7 @@ class BaseKnob(AbstractKnob):
         self.link = link
         self.attribute = attribute
         self.parent = parent
-        super(BaseKnob, self).__init__(**kwargs)
+        self.__dict__.update(kwargs)
 
     def to_script(self):
         from copy import deepcopy
