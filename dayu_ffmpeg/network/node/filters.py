@@ -435,3 +435,21 @@ class DrawSubtitle(BaseFilterNode):
         with open(temp_srt, 'w') as srt_file:
             srt_file.write(srt_string.encode('utf-8'))
         self.subtitle_file = temp_srt
+
+
+class Concat(BaseFilterNode):
+    type = 'concat'
+    max_input_num = 2
+
+    def __init__(self, number_of_inputs=2, video_streams=1, audio_streams=0, **kwargs):
+        self.number_of_inputs = number_of_inputs
+        self.video_streams = video_streams
+        self.audio_streams = audio_streams
+        self.max_input_num = number_of_inputs
+        super(Concat, self).__init__(**kwargs)
+
+    def simple_cmd_string(self):
+        self._cmd = u'concat=n={n}:v={v}:a={a}'.format(n=self.number_of_inputs,
+                                                       v=self.video_streams,
+                                                       a=self.audio_streams)
+        return self._cmd
