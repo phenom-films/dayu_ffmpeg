@@ -26,7 +26,7 @@ class BaseGroupNode(BaseNode):
         from holder import InputHolder
         if isinstance(node, InputHolder):
             exist_inputholders = self.inputholders
-            self.max_input_num = len(exist_inputholders) + 1
+            self.max_input_num = len(exist_inputholders)
             self.in_edges.append(None)
             node.link_num = self.max_input_num - 1
 
@@ -34,7 +34,7 @@ class BaseGroupNode(BaseNode):
         from holder import OutputHolder
         if isinstance(node, OutputHolder):
             exist_outputholders = self.outputholders
-            self.max_output_num = len(exist_outputholders) + 1
+            self.max_output_num = len(exist_outputholders)
             self.out_edges.append(UniqueList())
             node.link_num = self.max_output_num - 1
 
@@ -56,9 +56,9 @@ class BaseGroupNode(BaseNode):
             kwargs.update(parent=self)
             node = node_class(**kwargs)
 
+        self.inside_nodes.append(node)
         self.refresh_inputholder(node)
         self.refresh_outputholder(node)
-        self.inside_nodes.append(node)
         return node
 
     def reset_visited(self):
