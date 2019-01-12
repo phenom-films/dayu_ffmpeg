@@ -125,7 +125,7 @@ class RootNode(Group):
                                                                                          len(input_list),
                                                                                          len(output_list)))
         for index in range(self.max_input_num):
-            self.set_input(input_list[index])
+            self.set_input(input_list[index], index)
         for index in range(self.max_output_num):
             output_list[index].set_input(self, output_index=index)
 
