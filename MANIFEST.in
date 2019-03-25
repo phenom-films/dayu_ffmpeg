@@ -1,0 +1,4 @@
+include dayu_ffmpeg/static/bin/darwin/ffmpeg
+include dayu_ffmpeg/static/bin/win32/ffmpeg.exe
+include dayu_ffmpeg/static/bin/linux2/ffmpeg
+include dayu_ffmpeg/static/font/SourceHanSansK-Regular.ttf
