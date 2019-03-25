@@ -7,7 +7,7 @@ from setuptools import setup
 
 setup(
         name='dayu_ffmpeg',
-        version='0.5',
+        version='0.5.1',
         packages=['dayu_ffmpeg'],
         url='https://github.com/phenom-films/dayu_ffmpeg',
         license='MIT',
