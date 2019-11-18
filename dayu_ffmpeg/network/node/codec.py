@@ -34,6 +34,12 @@ class Codec(BaseCodecNode):
             self._cmd += u' -codec:a {audio}'.format(audio=self.audio)
         return self._cmd
 
+    def complex_cmd_string(self):
+        return '{cmd}'.format(
+                stream_in=''.join(['[{}]'.format(x) for x in self.stream_in_num]),
+                cmd=self.simple_cmd_string(),
+                stream_out='[{}]'.format(self.stream_out_num))
+
 
 class WriteTimecode(BaseCodecNode):
     type = 'timecode'
