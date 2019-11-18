@@ -6,6 +6,7 @@ __author__ = 'andyguo'
 from base import BaseNode
 from dayu_ffmpeg.config import CODEC_ORDER_SCORE
 
+
 class BaseCodecNode(BaseNode):
     type = 'base_code_node'
     order_score = CODEC_ORDER_SCORE
@@ -20,6 +21,25 @@ class BaseCodecNode(BaseNode):
                 stream_out='[{}]'.format(self.stream_out_num))
 
 
+class Map(BaseCodecNode):
+    type = 'map'
+
+    def __init__(self, node, channel='v', **kwargs):
+        super(Map, self).__init__(node, **kwargs)
+        self.node = node
+        self.channel = channel
+
+    def simple_cmd_string(self):
+        return ''
+
+    def complex_cmd_string(self):
+        return '{cmd} {node}{channel}'.format(
+                stream_in=''.join(['[{}]'.format(x) for x in self.stream_in_num]),
+                cmd='-map',
+                node='[{}]'.format(self.node.stream_out_num or self.stream_in_num[0]),
+                channel=':{}'.format(self.channel))
+
+
 class Codec(BaseCodecNode):
     type = 'codec'
 
@@ -29,7 +49,9 @@ class Codec(BaseCodecNode):
         super(Codec, self).__init__(**kwargs)
 
     def simple_cmd_string(self):
-        self._cmd = u'-codec:v {video}'.format(video=self.video)
+        self._cmd = ''
+        if self.video:
+            self._cmd = u'-codec:v {video}'.format(video=self.video)
         if self.audio:
             self._cmd += u' -codec:a {audio}'.format(audio=self.audio)
         return self._cmd

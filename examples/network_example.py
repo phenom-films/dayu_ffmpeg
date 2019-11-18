@@ -28,7 +28,7 @@ __doc__ = """
     * 只能创建一个Root node（对应就是整个处理的模板）
     * 需要几个input、output，就在root 下创建相应数量的 InputHolder 和 OutputHolder
     * 用户最终只需要按顺序传入对应的 Input list 和 Output list 即可
-    
+
 使用network 模式虽然相对复杂，但是有很多好处：
     * 可以实现转码的模板，用户只要调用即可
     * 整个Root 可以保存为ffscript，方便之后调用（或者使用其他语言编写解析器）
@@ -57,8 +57,18 @@ class TranscodeTemplate(RootNode):
         oh1 = cf.create_node(OutputHolder)
         oh1.set_input(fit)
 
+        m1 = self.create_node(Map, node=cf)
+        m1.set_input(cf)
+        c1 = self.create_node(Codec)
+        c1.set_input(m1)
+
+        m2 = self.create_node(Map, node=i2, channel='a')
+        m2.set_input(c1)
+        c2 = self.create_node(Codec, audio='copy', video=None)
+        c2.set_input(m2)
+
         oh2 = self.create_node(OutputHolder)
-        oh2.set_input(cf)
+        oh2.set_input(c2)
 
 
 if __name__ == '__main__':

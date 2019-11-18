@@ -152,8 +152,7 @@ class RootNode(Group):
     def _generate_output_cmd(self, all_bound_nodes):
         output_cmd_list = []
         for o in all_bound_nodes:
-            temp = '-map {stream} '.format(stream=''.join(['[{}]'.format(x) for x in o[0].stream_in_num]))
-            temp += ' '.join([n.complex_cmd_string() for n in o])
+            temp = ' '.join([n.complex_cmd_string() for n in o])
             output_cmd_list.append(temp)
         output_cmd = ' '.join(output_cmd_list)
         return output_cmd
