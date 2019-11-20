@@ -196,7 +196,7 @@ class DrawTimecode(BaseFilterNode):
         self.shadowy = shadow_y
         super(DrawTimecode, self).__init__(**kwargs)
 
-    def __str__(self):
+    def simple_cmd_string(self):
         from dayu_ffmpeg.util import get_safe_string
         self._cmd = u'drawtext=timecode=\'{timecode}\':r={fps}:x={x}:' \
                     u'y={y}:fontsize={size}:' \
