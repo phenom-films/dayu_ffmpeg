@@ -89,14 +89,13 @@ class DrawText(BaseFilterNode):
     def __init__(self, text='', x='w/2', y='h/2', size=32, color='white', font=None,
                  box=False, box_color='black@0.5', boxborder=2,
                  shadow_x=0, shadow_y=0, enable=None, **kwargs):
-        from dayu_ffmpeg.config import FFMPEG_DEFAULT_FONT
-        import sys
+        from dayu_ffmpeg.util import get_or_default_font
         self.text = text
         self.x = x
         self.y = y
         self.size = size
         self.color = color
-        self.font = font if font else FFMPEG_DEFAULT_FONT[sys.platform]
+        self.font = get_or_default_font(font)
         self.box = box
         self.box_color = box_color
         self.box_border = boxborder
@@ -140,14 +139,13 @@ class DrawDate(BaseFilterNode):
     def __init__(self, x='w/2', y='h/2', size=32, color='white', font=None, date_format='%{localtime:%Y-%m-%d}',
                  box=False, box_color='black@0.5', boxborder=2,
                  shadow_x=0, shadow_y=0, **kwargs):
-        from dayu_ffmpeg.config import FFMPEG_DEFAULT_FONT
-        import sys
+        from dayu_ffmpeg.util import get_or_default_font
         self.date_format = date_format
         self.x = x
         self.y = y
         self.size = size
         self.color = color
-        self.font = font if font else FFMPEG_DEFAULT_FONT[sys.platform]
+        self.font = get_or_default_font(font)
         self.box = box
         self.box_color = box_color
         self.box_border = boxborder
@@ -180,15 +178,14 @@ class DrawTimecode(BaseFilterNode):
     def __init__(self, x='w/2', y='h/2', size=32, color='white', font=None, timecode='00:00:00:00', fps=24,
                  box=False, box_color='black@0.5', boxborder=2,
                  shadow_x=0, shadow_y=0, **kwargs):
-        from dayu_ffmpeg.config import FFMPEG_DEFAULT_FONT
-        import sys
+        from dayu_ffmpeg.util import get_or_default_font
         self.timecode = timecode
         self.fps = fps
         self.x = x
         self.y = y
         self.size = size
         self.color = color
-        self.font = font if font else FFMPEG_DEFAULT_FONT[sys.platform]
+        self.font = get_or_default_font(font)
         self.box = box
         self.box_color = box_color
         self.box_border = boxborder
@@ -221,15 +218,14 @@ class DrawFrames(BaseFilterNode):
     def __init__(self, text='%{n}', x='w/2', y='h/2', size=32, color='white', font=None, start=1001,
                  box=False, box_color='black@0.5', boxborder=2,
                  shadow_x=0, shadow_y=0, **kwargs):
-        from dayu_ffmpeg.config import FFMPEG_DEFAULT_FONT
-        import sys
+        from dayu_ffmpeg.util import get_or_default_font
         self.text = text
         self.start = start
         self.x = x
         self.y = y
         self.size = size
         self.color = color
-        self.font = font if font else FFMPEG_DEFAULT_FONT[sys.platform]
+        self.font = get_or_default_font(font)
         self.box = box
         self.box_color = box_color
         self.box_border = boxborder
