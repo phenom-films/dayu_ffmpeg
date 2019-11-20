@@ -33,11 +33,11 @@ class PhenomSlate(RootNode):
         version_node.set_input(mask_node)
 
         user_node = complex_filter.create_node(DrawText(text='yangzhuo', x='w*0.85-tw', y='24', size=22,
-                                                        font='f:/workspace/DaYu/bin/ffmpeg/static/tahoma.ttf'))
+                                                        font='test.ttf'))
         user_node.set_input(version_node)
         date_time_node = complex_filter.create_node(DrawDate(x='w*0.985-tw', y='24',
                                                              size=22, date_format='%Y-%m-%d %H:%M:%S',
-                                                             font='f:/workspace/DaYu/bin/ffmpeg/static/tahoma.ttf'))
+                                                             font='test'))
         date_time_node.set_input(user_node)
 
         time_code_node = complex_filter.create_node(DrawTimecode(x=2048/2 + 10, y=858-24, size=22, color='white'))
