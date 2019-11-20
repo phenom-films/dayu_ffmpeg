@@ -4,6 +4,7 @@
 __author__ = 'andyguo'
 
 from base import BaseNode
+from dayu_ffmpeg.network.node.group import ComplexFilterGroup
 from dayu_ffmpeg.config import CODEC_ORDER_SCORE
 
 
@@ -33,10 +34,11 @@ class Map(BaseCodecNode):
         return ''
 
     def complex_cmd_string(self):
+        node_str = '[{}]'.format(self.stream_in_num[0]) if isinstance(self.node, ComplexFilterGroup) else '0'
         return '{cmd} {node}{channel}'.format(
                 stream_in=''.join(['[{}]'.format(x) for x in self.stream_in_num]),
                 cmd='-map',
-                node='[{}]'.format(self.node.stream_out_num or self.stream_in_num[0]),
+                node=node_str,
                 channel=':{}'.format(self.channel))
 
 
