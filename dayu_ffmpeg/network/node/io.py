@@ -104,7 +104,7 @@ class Output(BaseIONode):
         from filters import BaseFilterNode
         filter_nodes = [n for n in all_nodes if isinstance(n, BaseFilterNode)]
         cmd = '-vf \"{cmd}\"'.format(cmd=','.join(n.simple_cmd_string() for n in filter_nodes))
-        return cmd
+        return cmd if filter_nodes else ''
 
     def _generate_input_cmd(self, all_nodes):
         input_nodes = [n for n in all_nodes if isinstance(n, Input)]
